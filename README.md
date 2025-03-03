@@ -19,7 +19,7 @@ These are projects from my undergraduate studies, showcasing the skills I've dev
 - **Objective:** Applied **NLP** techniques to analyze and derive insights from text data.  
 - **Projects:** Covered tasks like sentiment analysis, topic modeling, and text classification using various Python libraries.
 
-### 4. **Data Science Reports (Regression & Advanced Data Science Course)**  
+### 4. **Data Science Reports (Various Statistics Courses)**  
 - **Objective:** Worked on several data science projects that involved **linear and nonlinear regression models**, **bootstrapping**, and **data cleaning and visualization**.  
 - **Outcome:** Created detailed reports showcasing data analysis, model performance, and actionable insights from real-world datasets.
 
