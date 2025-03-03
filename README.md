@@ -1,6 +1,6 @@
 # Hi, I'm Anusha! 👋
 
-🎓 **MS-ADS student** at the University of Chicago  
+🎓 **M.S. in Applied Data Science student** at the University of Chicago  
 🎓 **B.S. in Stats & Machine Learning** from Carnegie Mellon University (Class of 2024)
 
 ---
