@@ -33,7 +33,7 @@ These are projects from my undergraduate studies, showcasing the skills I've dev
 ### 🔍 **Skills Utilized in These Projects:**  
 - **Programming Languages:** Python, R  
 - **IDEs:** VSCode, RStudio  
-- **Machine Learning/Data Science:** **NLP**, **Linear and Nonlinear Regression Models**, **Bootstrapping**, **Data Cleaning**, **Data Collection**, **Data Visualization**  
+- **Machine Learning/Data Science:** **NLP**, **Linear and Nonlinear Regression Models**, **Bootstrapping**, **Data Collection**, **Data Cleaning**, **Data Visualization**  
 - **Computer Science:** **Graphic Visualization**, **Object-Oriented Programming**, **Graph Theory**, **Algorithmic Design and Complexity Analysis**  
 - **HCI:** **UI/UX Product Design**
 
