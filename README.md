@@ -1,4 +1,4 @@
-# Welcome to My Projects Repository! 🎉
+# Welcome to My Undergrad Projects Brance! 🎉
 
 These are projects from my undergraduate studies, showcasing the skills I've developed in statistics, machine learning, and computer science. Below are some key highlights:
 
