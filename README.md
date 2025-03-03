@@ -1,35 +1,42 @@
-# Hi, I'm Anusha! 👋
+# Welcome to My Projects Repository! 🎉
 
-🎓 **M.S. in Applied Data Science student** at the University of Chicago  
-🎓 **B.S. in Stats & Machine Learning** from Carnegie Mellon University (Class of 2024)
-
----
-
-📚 **About Me:**  
-I’m currently diving deep into data science at UChicago, with a background in Statistics and Machine Learning. I love working on academic projects that focus on machine learning, statistics, and computer science. This repo is where I share my **Python** and **R** projects from my courses, which cover a variety of topics ranging from predictive modeling to data visualization.
-
-When I’m not coding, I enjoy going on long walks, relaxing with rom coms and classic sitcoms (currently rewatching *Modern Family*, and my all-time fave is *Reba*). I’m also getting into cooking, knitting, crocheting, and painting! 🎨🍝
+These are projects from my undergraduate studies, showcasing the skills I've developed in statistics, machine learning, and computer science. Below are some key highlights:
 
 ---
 
-🔍 **What I’m Looking For:**  
-I’m actively exploring **Summer 2025 internship** opportunities for data science roles where I can apply my skills and gain hands-on experience in solving real-world problems with data. 🚀
+## 📊 **Key Projects:**
+
+### 1. **Statistics Capstone - Optimizing Team USA Selection for Olympics Gymnastics**  
+- **Objective:** Simulated the Olympic gymnastics competition to optimize athlete selection for Team USA.  
+- **Methodology:** Used **linear mixed effects regression** to predict outcomes and optimize for medal count based on historical performance data.  
+- **Outcome:** A statistical model that guided the decision-making process for selecting athletes with the highest potential for winning medals.
+
+### 2. **AI Product Design Presentations (HCI Class)**  
+- **Objective:** Developed comprehensive presentations to pitch various AI products based on **Human-Computer Interaction (HCI)** principles.  
+- **Focus:** Emphasized how AI can be integrated into user-friendly products, ensuring optimal interaction and enhancing user experience.
+
+### 3. **Taylor Swift and Beyonce Lyrical Comparison (Text Analysis Course) **  
+- **Objective:** Applied **NLP** techniques to analyze and derive insights from text data.  
+- **Projects:** Covered tasks like sentiment analysis, topic modeling, and text classification using various Python libraries.
+
+### 4. **Data Science Reports (Regression & Advanced Data Science Course)**  
+- **Objective:** Worked on several data science projects that involved **linear and nonlinear regression models**, **bootstrapping**, and **data cleaning and visualization**.  
+- **Outcome:** Created detailed reports showcasing data analysis, model performance, and actionable insights from real-world datasets.
+
+### 5. **Paradise Diner Restaurant Game (Intro to Computer Science)**  
+- **Objective:** Developed a graphical visualization of a restaurant game using **Dijkstra's algorithm** based on the games Flo's Diner and Penguin's Diner.  
+- **Methodology:** Used **graph theory** and **algorithmic problem-solving** to create a game where players navigate a restaurant using optimal paths.  
+- **Tools:** Visualized the game environment and logic using CMU 15-112 graphics libraries.
 
 ---
 
-💻 **Tech Skills:**  
-- Programming languages: **Python**, **R**, **C**, **SQL**  
-- IDEs: **RStudio**, **VSCode**  
-- Machine Learning: **Text Analysis/NLP**, **Time Series Forecasting**, **Regression**, **Clustering**, **Algorithms**  
-- Libraries: **Pandas**, **NumPy**, **scikit-learn**, **PySpark**  
-- Data Visualization: **matplotlib**, **seaborn**, **ggplot2**  
-- Cloud Computing & Big Data Tools: **GCS**, **AWS** 🌥️  
-- Product Design: Knowledge of **UI/UX principles** for building intuitive interfaces
+### 🔍 **Skills Utilized in These Projects:**  
+- **Programming Languages:** Python, R  
+- **IDEs:** VSCode, RStudio  
+- **Machine Learning/Data Science:** **NLP**, **Linear and Nonlinear Regression Models**, **Bootstrapping**, **Data Cleaning**, **Data Visualization**  
+- **Computer Science:** **Graphic Visualization**, **Object-Oriented Programming**, **Graph Theory**, **Algorithmic Design and Complexity Analysis**  
+- **HCI:** **UI/UX Product Design**
 
 ---
 
-🌱 **Let’s Connect:**  
-Feel free to check out my projects and reach out if you'd like to learn more or chat about data science!  
-[Connect with me on LinkedIn](https://www.linkedin.com/in/anushabhat09)
-
----
+I hope you enjoy exploring these projects! Feel free to reach out if you have any questions or want to discuss any of these topics in more detail.  
