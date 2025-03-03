@@ -1,0 +1,397 @@
+---
+title: "ml1"
+author: "Anusha Bhat"
+date: "2025-02-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warnings = FALSE, messages = FALSE)
+```
+
+## Data Loading
+
+```{r}
+df = read.csv("german_credit_hw1.csv")
+```
+
+```{r}
+# make categorical columns factors
+df$CheckingAccountStatus = factor(df$CheckingAccountStatus)
+df$CreditHistory = factor(df$CreditHistory)
+df$Purpose = factor(df$Purpose)
+df$Savings = factor(df$Savings)
+df$EmploymentStatus = factor(df$EmploymentStatus)
+df$PersonalStatus = factor(df$PersonalStatus)
+df$OtherDebtors = factor(df$OtherDebtors)
+df$PropertyStatus = factor(df$PropertyStatus)
+df$InstallmentPlansStatus = factor(df$InstallmentPlansStatus)
+df$HousingStatus = factor(df$HousingStatus)
+df$JobStatus = factor(df$JobStatus)
+```
+
+## Split Data Into Train and Test Sets
+
+For the simulation, we chose to use all of the variables after feature engineering the one-hot encoded boolean columns since all of the features are relevant for predicting Amount.
+
+```{r}
+# Split the data into train and test using 632:368 ratio
+shuffled_indices = sample(nrow(df))
+train_indices = shuffled_indices[1:632]
+test_indices = shuffled_indices[633:1000]
+  
+df_train = df[train_indices, ]
+df_test = df[test_indices, ]
+```
+
+
+## Run Full Model Linear Regression on Train Data
+
+```{r}
+# Run lm on whole data frame
+lm_full = lm(Amount ~ ., data = df_train)
+full_model_coeffs = coef(lm_full)
+```
+
+
+```{r}
+summary(lm_full)
+```
+
+
+## Simulating Linear Regression 1000 times 
+
+```{r, cache = TRUE}
+# Function to run linear regression 1000 times
+sim_regs = function(df, n_runs = 1000) {
+  
+  # Fit the model once to determine the number of coefficients
+  # Need to do this since there are many dummy variables
+  model_example = lm(Amount ~ ., data = df)
+  
+  # Get the names of the coefficients from the model
+  coef_names = names(coef(model_example))
+  
+  n_predictors = length(coef_names)
+  
+  # Initialize results matrix
+  # + 2 for R-squared columns
+  results = matrix(NA, nrow = n_runs, ncol = n_predictors + 2)  
+  
+  colnames(results) = c(coef_names, "R_squared_train", "R_squared_test")
+  
+  # Run the 1000 iterations
+  for (i in 1:n_runs) {
+    
+    # Split the shuffled data into train and test
+    shuffled_indices = sample(nrow(df))
+    train_indices = shuffled_indices[1:632]
+    test_indices = shuffled_indices[633:1000]
+    
+    df_train = df[train_indices, ]
+    df_test = df[test_indices, ]
+    
+    
+    # Train model and store the coefficients and R-squareds
+    model = lm(Amount ~ ., data = df_train)
+    results[i, 1:n_predictors] = coef(model)
+    r_squared_train = summary(model)$r.squared
+    
+    
+    # Predict on the test data for test R-squared
+    test_predictions = predict(model, newdata = df_test)
+    test_actual_values = df_test$Amount
+    test_residuals = test_actual_values - test_predictions
+    ss_total_test = sum((test_actual_values - mean(test_actual_values))^2)  
+    ss_residual_test = sum(test_residuals^2)
+    r_squared_test = 1 - (ss_residual_test / ss_total_test)
+    
+    # Store R-squared values in the last 2 columns
+    results[i, n_predictors + 1] = r_squared_train
+    results[i, n_predictors + 2] = r_squared_test
+  }
+  
+  return(results)
+}
+
+```
+
+
+```{r}
+# Run simulation 1000 times
+results_matrix = sim_regs(df)
+
+# Convert to data frame
+res_df = as.data.frame(results_matrix)
+
+head(results_matrix)
+```
+
+## Plotting the Distributions of any 10 Coefficients, Train $R^2$, Test $R^2$, and Percentage Decrease of $R^2$.
+
+```{r}
+hist(res_df$Duration, main = "Distribution of Duration Coefficient",
+     xlab = "Coefficient Value",
+     col = "light blue")
+```
+
+```{r}
+hist(res_df$InstallmentRatePercentage,
+     main = "Distribution of Installment Rate % Coefficient",
+     xlab = "Coefficient Value",
+     col = "light blue")
+```
+
+```{r}
+hist(res_df$ResidenceDuration,
+     main = "Distribution of Residence Duration Coefficient",
+     xlab = "Coefficient Value",
+     col = "light blue")
+```
+
+```{r}
+hist(res_df$Age, main = "Distribution of Age Coefficient",
+     xlab = "Coefficient Value",
+     col = "light blue")
+```
+
+```{r}
+hist(res_df$ForeignWorker,
+     main = "Distribution of Foreign Worker Coefficient",
+     xlab = "Coefficient Value",
+     col = "light blue")
+```
+
+```{r}
+hist(res_df$CheckingAccountStatus1,
+     main = "Distribution of Checking Accounts 1 Coefficient",
+     xlab = "Coefficient Value",
+     col = "light blue")
+```
+
+```{r}
+hist(res_df$NumberExistingCredits, 
+     main = "Distribution of Existing Credits Coefficient",
+     xlab = "Coefficient Value",
+     col = "light blue")
+```
+
+```{r}
+hist(res_df$Purpose1, 
+     main = "Distribution of Puirpose 1 Coefficient",
+     xlab = "Coefficient Value",
+     col = "light blue")
+```
+
+```{r}
+hist(res_df$Savings1,
+     main = "Distribution of Savings 1 Coefficient",
+     xlab = "Coefficient Value",
+     col = "light blue")
+```
+
+```{r}
+hist(res_df$JobStatus1,
+     main = "Distribution of Job Status 1 Coefficient",
+     xlab = "Coefficient Value",
+     col = "light blue")
+```
+
+
+```{r}
+hist(res_df$HousingStatus1,
+     main = "Distribution of Housing Status 1 Coefficient",
+     xlab = "Coefficient Value",
+     col = "light blue")
+```
+
+```{r}
+hist(res_df$R_squared_train,
+     main = "Distribution of Train R Squared",
+     xlab = "R Squared",
+     col = "light blue")
+```
+
+```{r}
+hist(res_df$R_squared_test,
+     main = "Distribution of Test R Squared",
+     xlab = "R Squared",
+     col = "light blue")
+```
+
+```{r}
+# Calculate percentage change in R2
+fall_r2 = (res_df$R_squared_train - res_df$R_squared_test) / res_df$R_squared_train * 100
+
+```
+
+
+```{r}
+hist(fall_r2,
+     main = "Distribution of Change in R Squared",
+     xlab = "Change in R Squared",
+     col = "light blue")
+```
+```{r}
+# Table of R^2 in train, test, and change 
+
+tmp_df = cbind(res_df$R_squared_train, res_df$R_squared_test, fall_r2)
+colnames(tmp_df) = c("Train R Squared", "Test R Squared", "Percentage Drop")
+head(as.data.frame(tmp_df), 20)
+```
+
+
+
+
+The train $R^2$ is higher than the test $R^2$ which is what we usually expect since the model is fit using the train data so it should predict better using the train data than the test data. The percentage change histogram is concentrated between 5-20% which is a reasonable change from the train to test $R^2$ value since we expect test $R^2$ to be slightly lower than train $R^2$ for a decent model, indicating a good result. We usually expect train $R^2$ to be higher than what we observe in the train $R^2$ histogram above, however, since we don't observe a large change between train and test $R^2$, this is a reasonable result. 
+
+
+## Comparing Averages and Standard Deviationss 
+
+```{r}
+# Remove R^2 columns
+coef_df = res_df[, 1:(ncol(res_df)-2)] 
+
+# Calculate means and standard deviations
+coeff_means = as.data.frame(colMeans(coef_df))
+coeff_sds = as.data.frame(apply(coef_df, 2, sd))
+```
+
+```{r}
+# Compare avg to full model by calculating percentage difference
+mean_pct = (abs(full_model_coeffs - coeff_means)/((coeff_means + full_model_coeffs)/2)) * 100
+```
+
+```{r}
+# Table of Means, Standard Deviation
+tmp_df2 = cbind(coeff_means, coeff_sds, full_model_coeffs, mean_pct)
+colnames(tmp_df2) = c("Means", "SDs", "Full Model", "Difference")
+tmp_df2
+```
+
+
+## Confidence Intervals 
+
+```{r}
+full_model_ci = confint(lm_full) 
+full_model_ci_df = as.data.frame(full_model_ci)
+colnames(full_model_ci_df) = c("Full_Lower_Bound", "Full_Upper_Bound")
+```
+
+
+```{r}
+
+# Matrix for CI results (lower bound, upper bound, CI width)
+ci_matrix = matrix(NA, nrow = ncol(coef_df), ncol = 3)  
+
+# Loop through each coefficient and get CI bounds
+for (i in 1:ncol(coef_df)) {
+  
+  # Calculate the lower (25th percentile) and upper (97.5th percentile) bounds
+  coef_values = sort(coef_df[[i]])
+  lower_bound = coef_values[round(0.025 * length(coef_values))]
+  upper_bound = coef_values[round(0.975 * length(coef_values))]
+  
+  ci_matrix[i, 1] = lower_bound
+  ci_matrix[i, 2] = upper_bound
+  
+  # Calculate the width of the CI 
+  ci_width = (upper_bound - lower_bound) * sqrt(0.632)
+
+  ci_matrix[i, 3] = ci_width
+}
+
+
+ci_df = as.data.frame(ci_matrix)
+colnames(ci_df) = c("Lower_Bound", "Upper_Bound", "CI_Width")
+rownames(ci_df) = colnames(coef_df) 
+```
+
+```{r}
+# Calculate the width of the confidence intervals for the full model
+full_model_ci_width = full_model_ci_df$Full_Upper_Bound - full_model_ci_df$Full_Lower_Bound
+```
+
+```{r}
+# Results df for CIs
+combined_ci_df = cbind(ci_df, full_model_ci_df)
+combined_ci_df$Full_CI_Width = full_model_ci_width
+
+# Column indicating if simulated coef has larger or smaller CI than full model coef
+combined_ci_df$CI_Comparison = ifelse(combined_ci_df$CI_Width < combined_ci_df$Full_CI_Width, "Smaller", "Larger")
+
+combined_ci_df
+```
+
+
+```{r}
+
+# Count how many are smaller or larger
+comparison_counts = table(combined_ci_df$CI_Comparison)
+comparison_counts
+```
+
+The results for the means show that less than half of the coefficients had a percentage difference of less than 30%, indicating a large difference between the mean and full model coefficients. Most confidence intervals (CIs) from the ensemble method were narrower (47) compared to the full model, with only 1 wider. As the number of samples increases, such as with 10,000, we expect the CIs to tighten, providing more precise estimates. Since the ensemble method was run 1,000 times compared to the full model's single run, it produces more reliable and accurate confidence intervals, as expected with repeated sampling.
+
+
+## ML part 
+
+```{r}
+# dot prod avg coeffs w/ test df and compare preds w/ actual Amount col to get R2 and compare that w/ R2 from full model 
+```
+```{r}
+# Create predictions using the full model formula structure
+train_matrix <- model.matrix(lm_full)  
+test_matrix <- model.matrix(Amount ~ ., data = df_test)
+
+# Ensure the coefficient names align with the matrix columns
+coeff_names <- names(coef(lm_full))
+ensemble_coeffs <- coeff_means[coeff_names, ]
+
+# Make predictions
+train_preds <- as.matrix(train_matrix) %*% as.matrix(ensemble_coeffs)
+test_preds <- as.matrix(test_matrix) %*% as.matrix(ensemble_coeffs)
+
+# Calculate R-squared for ensemble model
+calc_r2 <- function(actual, predicted) {
+    residuals <- actual - predicted
+    ss_residual <- sum(residuals^2)
+    ss_total <- sum((actual - mean(actual))^2)
+    return(1 - ss_residual/ss_total)
+}
+
+# Calculate R-squared for ensemble model
+ensemble_train_r2 <- calc_r2(df_train$Amount, train_preds)
+ensemble_test_r2 <- calc_r2(df_test$Amount, test_preds)
+
+# Get R-squared for single OLS model (your full model)
+ols_train_r2 <- summary(lm_full)$r.squared
+ols_test_preds <- predict(lm_full, newdata = df_test)
+ols_test_r2 <- calc_r2(df_test$Amount, ols_test_preds)
+
+cat("Single OLS Model:\n")
+cat("Train R-squared:", round(ols_train_r2, 4), "\n")
+cat("Test R-squared:", round(ols_test_r2, 4), "\n\n")
+
+cat("Ensemble Model (Average of 1000 models):\n")
+cat("Train R-squared:", round(ensemble_train_r2, 4), "\n")
+cat("Test R-squared:", round(ensemble_test_r2, 4), "\n")
+```
+While the single OLS model fits the training data better, the ensemble model provides improved predictive performance on the test data. This demonstrates the effectiveness of the ensemble approach in machine learning, emphasizing the importance of using multiple models to achieve better generalization.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
