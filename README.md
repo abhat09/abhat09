@@ -15,7 +15,7 @@ These are projects from my undergraduate studies, showcasing the skills I've dev
 - **Objective:** Developed comprehensive presentations to pitch various AI products based on **Human-Computer Interaction (HCI)** principles.  
 - **Focus:** Emphasized how AI can be integrated into user-friendly products, ensuring optimal interaction and enhancing user experience.
 
-### 3. **Taylor Swift and Beyonce Lyrical Comparison (Text Analysis Course) **  
+### 3. **Taylor Swift and Beyonce Lyrical Comparison (Text Analysis Course)**  
 - **Objective:** Applied **NLP** techniques to analyze and derive insights from text data.  
 - **Projects:** Covered tasks like sentiment analysis, topic modeling, and text classification using various Python libraries.
 
