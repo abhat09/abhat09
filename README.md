@@ -25,7 +25,7 @@ These are projects from my undergraduate studies, showcasing the skills I've dev
 
 ### 5. **Paradise Diner Restaurant Game (Intro to Computer Science)**  
 - **Objective:** Developed a graphical visualization of a restaurant game using **Dijkstra's algorithm** based on the games Flo's Diner and Penguin's Diner.  
-- **Methodology:** Used **graph theory** and **algorithmic problem-solving** to create a game where players navigate a restaurant using optimal paths.  
+- **Methodology:** Used **graph theory** and **algorithmic problem-solving** to create a game where players navigate a restaurant using Djikstra's Algorithm.  
 - **Tools:** Visualized the game environment and logic using CMU 15-112 graphics libraries.
 
 ---
