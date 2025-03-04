@@ -20,10 +20,10 @@ I’m actively exploring **Summer 2025 internship** opportunities for data scien
 💻 **Tech Skills:**  
 - Programming languages: **Python**, **R**, **C**, **SQL**  
 - IDEs: **RStudio**, **VSCode**  
-- Machine Learning: **Text Analysis/NLP**, **Time Series Forecasting**, **Regression**, **Clustering**, **Algorithms**  
+- Machine Learning: **Text Analysis/NLP**, **Time Series Forecasting**, **Regression**, **Clustering**, **Classification**, **Algorithmic Design and Complexity Analysis**, **Feature Engineering**  
 - Libraries: **Pandas**, **NumPy**, **scikit-learn**, **PySpark**  
 - Data Visualization: **matplotlib**, **seaborn**, **ggplot2**  
-- Cloud Computing & Big Data Tools: **GCS**, **AWS** 🌥️  
+- Cloud Computing & Big Data Tools: **GCS**, **AWS**, **Hadoop** 🌥️  
 - Product Design: Knowledge of **UI/UX principles** for building intuitive interfaces
 
 ---
