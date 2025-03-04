@@ -1,0 +1,1183 @@
+---
+title: "final project"
+author: "Anusha Bhat"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+# Load libraries 
+```{r setup, include=FALSE, messages = FALSE, warnings = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggraph)
+library(tidyverse)
+library(quanteda)
+library(ggplot2)
+library(quanteda.textstats)
+library(readtext)
+library(kableExtra)
+load("../data/multiword_expressions.rda")
+source("../R/dispersion_functions.R")
+source("../R/helper_functions.R")
+source("../R/utility_functions.R")
+source("../R/collocation_functions.R")
+source("../R/keyness_functions.R")
+set.seed(1234)
+library(udpipe)
+library(readr)
+library(igraph)
+library(nnet)
+library(ggraph)
+library(nFactors)
+library(udpipe)
+library(pseudobibeR)
+library(cluster)
+library(factoextra)
+source("../R/mda_functions.R")
+library(syuzhet)
+library(schrute)
+library(tidytext)
+library(SnowballC)
+library(wordcloud)
+library(topicmodels)
+library(stm)
+library(tm)
+```
+
+# Taylor Swift data processing
+
+```{r}
+# load in csv of song lyrics 
+ts_csv <- read.csv("../final_project/Taylor_Swift_Fin.csv")
+
+# split into albums
+taylor_swift = ts_csv[0:14,]
+fearless = ts_csv[15:37,]
+speak_now = ts_csv[38:62,]
+red = ts_csv[63:90,]
+nineteen_eighty_nine = ts_csv[91:111,]
+reputation = ts_csv[112:126,]
+lover = ts_csv[127:143,]
+folklore = ts_csv[144:160,]
+evermore = ts_csv[161:177,]
+midnights =  ts_csv[178:198,]
+
+
+# list of stop words (removing useless lyrics):
+remove_lyrics = c("like", "ooh", "oh", "yeah", "mm", "mhm", "ah", "oh-oh", "eh",
+                  "oo-oo-oo", "whoa", "ah-ah", "ha", "eh", "oh-ah", "uh", "woo",
+                  "ya ya", "ya", "yaka", "la-la-la", "na", "na na", "eeh",
+                  "la", "oo", "huh", "mmh", "wanna", "gonna", "why'd", "should've",
+                  "lavender", "would've", "could've", "haze", "snow", "beach", "igh") 
+#update this based on topics results 
+stops = c(stop_words$word, remove_lyrics)
+
+# tokenization 
+st_taylor_swift = taylor_swift %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+# stemming 
+st_speak_now = speak_now %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_fearless = fearless %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_red = red %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_nineteen_eighty_nine = nineteen_eighty_nine %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_reputation = reputation %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_lover = lover %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_folklore = folklore %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_evermore = evermore %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_midnights = midnights %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+# combine all mutated albums --> kept them seperate above for topic modeling 
+ts_stem_all = rbind(st_taylor_swift, st_speak_now, st_fearless, st_red,
+                    st_nineteen_eighty_nine, st_reputation, st_lover,
+                    st_folklore, st_evermore, st_midnights)
+
+# all albums with no stemming
+ts_no_stem = ts_csv  %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops))
+```
+
+# Wordcloud --> Taylor Swift 
+
+```{r}
+# without stemming
+# count number of times the same word appears in the data frame
+ts_stem_all_sum = ts_stem_all %>%
+  group_by(word) %>%
+  count() %>%
+  ungroup()
+
+# plot word cloud --> visualizes frequencies 
+wordcloud(words = ts_stem_all_sum$word,
+          freq = ts_stem_all_sum$n,
+          random.order = F,
+          max.words = 100,
+          colors = brewer.pal(8, "Dark2"))
+
+# with stemming --> w/o plot is more understandable 
+ts_stem_all_sum2 = ts_stem_all %>%
+  group_by(stem) %>%
+  count() %>%
+  ungroup()
+
+wordcloud(words = ts_stem_all_sum2$stem,
+          freq = ts_stem_all_sum2$n,
+          random.order = F,
+          max.words = 100,
+          colors = brewer.pal(8, "Dark2"))
+
+```
+# TF-IDF
+
+```{r}
+# without stemming
+# to use the stem words just change word to stem wherever it appears below
+
+# create tf_idf
+ts_album_sum = ts_stem_all %>%
+  group_by(albums, word) %>%
+  count() %>%
+  ungroup %>%
+  bind_tf_idf(word, albums, n)
+
+# plot words for each album that occur more frequently than in other albums
+ts_album_sum %>%
+  group_by(albums) %>%
+  slice_max(tf_idf, n = 5, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, tf_idf, albums)) %>%
+  ggplot(aes(y = tf_idf, x = word)) +
+  geom_col(fill = "light pink") +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~ albums, ncol = 5,
+             scales = "free") +
+  labs(y = "TF-IDF", x = NULL)
+
+```
+
+# Sentiment Analysis by album 
+
+```{r}
+# join sentiment dict (bing) to token table without stemming so R can compare 
+# words correctly 
+ts_sent = ts_no_stem %>%
+  inner_join(get_sentiments("bing"))
+
+ts_album_order = c("taylorswift", "speaknow", "fearless", "red", "nineteen",
+                   "reputation", "lover", "folklore",  "evermore", "midnights")
+
+ts_sent %>%
+  group_by(albums, sentiment) %>%
+  summarize(n_words = n()) %>%
+  ungroup() %>%
+  group_by(albums) %>%
+  mutate(proportion = n_words / sum(n_words)) %>%
+  ungroup() %>%
+  mutate(albums = fct_relevel(albums, ts_album_order)) %>%
+  ggplot(aes(x = albums, y = proportion, fill = sentiment)) +
+  geom_bar(stat = "identity") +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(title = "Emotional Valence of Taylor Swift's Albums",
+       x = "Album",
+       y = "Proportion of Sentiment") +
+  scale_x_discrete(labels = c("Taylor Swift", "Fearless", "Speak Now", "Red",
+                              "1989", "Reputation", "Lover", "Folklore",
+                              "Evermore", "Midnights"))
+  
+# use mutate(albums = fct_reorder(albums, total)) %>% right before ggplot
+# to reorder based on album token size --> right now it is in chronological order
+```
+# Topic Modeling with Latent Dirichlet Allocation and k topics
+
+```{r}
+# count stems 
+ts_stem_sum = ts_stem_all %>%
+  group_by(albums, stem) %>%
+  count() %>%
+  ungroup %>%
+  bind_tf_idf(stem, albums, n)
+
+# convert to a dtm
+ts_stem_dtm = ts_stem_sum %>%
+  cast_dtm(albums, stem, n)
+
+ts_lda = LDA(ts_stem_dtm, k = 4, control = list(seed = 1234))
+ts_topics <- tidy(ts_lda, matrix = "beta")
+
+# Grab the words with the top ten probabilities (betas), and then organize 
+# the data by topic, decreasing by beta
+ts_top_terms <- ts_topics %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+```
+
+
+# Plotting LDA results 
+
+```{r}
+# plot for each topic with the probabilities of the words are in decreasing order 
+ts_top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered()
+
+# word clouds for each topic
+ts_topic1 <- ts_topics %>%
+  filter(topic == 1)
+
+ts_topic2 <- ts_topics %>%
+  filter(topic == 2)
+
+ts_topic3 <- ts_topics %>%
+  filter(topic == 3)
+
+ts_topic4 <- ts_topics %>%
+  filter(topic == 4)
+
+
+par(mfrow = c(1, 2))
+wordcloud(words = ts_topic1$term, freq = ts_topic1$beta,
+          random.order = FALSE,
+          max.words = 100,
+          col = "hot pink",
+          scale=c(2,.5))
+title(main = "Topic 1")
+
+wordcloud(words = ts_topic2$term, freq = ts_topic2$beta,
+          random.order = FALSE,
+          max.words = 100,
+          col = "green", 
+          scale=c(2,.5))
+title(main = "Topic 2")
+
+par(mfrow = c(1, 2))
+wordcloud(words = ts_topic3$term, freq = ts_topic3$beta,
+          random.order = FALSE,
+          max.words = 100,
+          col = "orange", 
+          scale=c(2,.5))
+title(main = "Topic 3")
+
+wordcloud(words = ts_topic4$term, freq = ts_topic4$beta,
+          random.order = FALSE,
+          max.words = 100,
+          col = "purple", 
+          scale=c(2,.5))
+title(main = "Topic 4")
+```
+# Find most influential words for each topic using log ration 
+
+```{r}
+# find the betas for topics 1 and 2
+beta_spread12 <- ts_topics %>%
+  mutate(topic = paste0("topic", topic)) %>%
+  pivot_wider(names_from = topic, values_from = beta) %>%
+  filter(topic1 > .001 | topic2 > .001) %>%
+  mutate(log_ratio = log2(topic2 / topic1)) %>%
+  arrange(log_ratio)
+
+# find the important words with plot
+# positive = important for topic 2, negative = important for topic 1
+beta_spread12 %>%
+  group_by(direction = log_ratio > 0) %>%
+  top_n(10, abs(log_ratio)) %>%
+  ungroup() %>%
+  mutate(term = reorder(term, log_ratio)) %>%
+  ggplot(aes(term, log_ratio, fill = direction)) +
+  geom_col(show.legend = FALSE) +
+  labs(y = "Log2 ratio of beta in topic 2 / topic 1") +
+  coord_flip()
+
+# repeat for topics 3 and 4
+beta_spread34 <- ts_topics %>%
+  mutate(topic = paste0("topic", topic)) %>%
+  pivot_wider(names_from = topic, values_from = beta) %>%
+  filter(topic3 > .001 | topic4 > .001) %>%
+  mutate(log_ratio = log2(topic4 / topic3)) %>%
+  arrange(log_ratio)
+
+beta_spread34 %>%
+  group_by(direction = log_ratio > 0) %>%
+  top_n(10, abs(log_ratio)) %>%
+  ungroup() %>%
+  mutate(term = reorder(term, log_ratio)) %>%
+  ggplot(aes(term, log_ratio, fill = direction)) +
+  geom_col(show.legend = FALSE) +
+  labs(y = "Log2 ratio of beta in topic 4 / topic 3") +
+  coord_flip()
+```
+# Topic Modeling with STM
+
+# Taylor Swift Album
+```{r}
+st_taylor_swift1 <- st_taylor_swift %>%
+  group_by(songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+taylor_swift_corpus <- st_taylor_swift1$text %>% corpus()
+
+taylor_swift_tokens <- taylor_swift_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+taylor_swift_dfm <- taylor_swift_tokens %>%
+  dfm()
+
+taylor_swift_stm <- stm(taylor_swift_dfm, K = 4, 
+                        data = docvars(taylor_swift_tokens),  verbose = F)
+plot(taylor_swift_stm)
+```
+# Fearless Album
+```{r}
+st_fearless1 <- st_fearless %>%
+  group_by(songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+fearless_corpus <- st_fearless1$text %>% corpus()
+
+fearless_tokens <- fearless_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+fearless_dfm <- fearless_tokens %>%
+  dfm()
+
+fearless_stm <- stm(fearless_dfm, K = 4, 
+                        data = docvars(fearless_tokens), verbose = F)
+plot(fearless_stm)
+```
+
+
+# Speak Now Album
+```{r}
+st_speak_now1 <- st_speak_now %>%
+  group_by(songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+speak_now_corpus <- st_speak_now1$text %>% corpus()
+
+speak_now_tokens <- speak_now_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+speak_now_dfm <- speak_now_tokens %>%
+  dfm()
+
+speak_now_stm <- stm(speak_now_dfm, K = 4, 
+                        data = docvars(speak_now_tokens), verbose = F)
+plot(speak_now_stm)
+```
+
+
+# Red Album
+```{r}
+st_red1 <- st_red %>%
+  group_by(songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+red_corpus <- st_red1$text %>% corpus()
+
+red_tokens <- red_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+red_dfm <- red_tokens %>%
+  dfm()
+
+red_stm <- stm(red_dfm, K = 4, 
+                        data = docvars(red_tokens), verbose = F)
+plot(red_stm)
+```
+
+# 1898 Album
+```{r}
+st_19891 <- st_nineteen_eighty_nine %>%
+  group_by(songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+st_1989_corpus <- st_19891$text %>% corpus()
+
+st_1989_tokens <- st_1989_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+st_1989_dfm <- st_1989_tokens %>%
+  dfm()
+
+st_1989_stm <- stm(st_1989_dfm, K = 4, 
+                        data = docvars(st_1989_tokens), verbose = F)
+plot(st_1989_stm)
+```
+
+# Reputation Album
+```{r}
+st_rep <- st_reputation %>%
+  group_by(songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+st_rep_corpus <- st_rep$text %>% corpus()
+
+st_rep_tokens <- st_rep_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+st_rep_dfm <- st_rep_tokens %>%
+  dfm()
+
+st_rep_stm <- stm(st_rep_dfm, K = 4, 
+                        data = docvars(st_rep_tokens), verbose = F)
+plot(st_rep_stm)
+```
+# Lover Album
+```{r}
+st_lov <- st_lover %>%
+  group_by(songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+st_lov_corpus <- st_lov$text %>% corpus()
+
+st_lov_tokens <- st_lov_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+st_lov_dfm <- st_lov_tokens %>%
+  dfm()
+
+st_lov_stm <- stm(st_lov_dfm, K = 4, 
+                        data = docvars(st_lov_tokens), verbose = F)
+plot(st_lov_stm)
+```
+# Folklore Album
+```{r}
+st_folk <- st_folklore %>%
+  group_by(songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+st_folk_corpus <- st_folk$text %>% corpus()
+
+st_folk_tokens <- st_folk_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+st_folk_dfm <- st_folk_tokens %>%
+  dfm()
+
+st_folk_stm <- stm(st_folk_dfm, K = 4, 
+                        data = docvars(st_folk_tokens), verbose = F)
+plot(st_folk_stm)
+```
+
+# Evermore Album
+```{r}
+st_eve <- st_evermore %>%
+  group_by(songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+st_eve_corpus <- st_eve$text %>% corpus()
+
+st_eve_tokens <- st_eve_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+st_eve_dfm <- st_eve_tokens %>%
+  dfm()
+
+st_eve_stm <- stm(st_eve_dfm, K = 4, 
+                        data = docvars(st_eve_tokens), verbose = F)
+plot(st_eve_stm)
+```
+
+# Midnights Album
+```{r}
+st_mid <- st_midnights %>%
+  group_by(songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+st_mid_corpus <- st_mid$text %>% corpus()
+
+st_mid_tokens <- st_mid_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+st_mid_dfm <- st_mid_tokens %>%
+  dfm()
+
+st_mid_stm <- stm(st_mid_dfm, K = 4, 
+                        data = docvars(st_mid_tokens), verbose = F)
+plot(st_mid_stm)
+```
+# Making topic table 
+```{r}
+Topic1 = c("Heartbreak", "Love", "Goodbye", "Running", "Haters", "Heartbreak", "Crushes", "Hope", "Closure", "Love")
+Topic2 = c("Songs", "Time", "Love", "Time", "Anxiety", "Delicate", "Sadness", "Time", "Sadness", "Time")
+Topic3 = c("Beauty", "Feelings", "Growing Up", "Trouble", "Lust", "Nostalgia", "Nostalgia", "Peace", "Happiness", "Scheming")
+Topic4 = c("Hope", "Fearless", "Time", "Love", "Love", "Fun", "Love", "Women", "Heartbreak", "Revenge")
+
+
+ts_topics = data.frame(Album = c("Taylor Swift", "Fearless", "Speak Now", "Red",
+                              "1989", "Reputation", "Lover", "Folklore",
+                              "Evermore", "Midnights"),
+                       Topic_1 = Topic1,
+                       Topic_2 = Topic2,
+                       Topic_3 = Topic3,
+                       Topic_4 = Topic4)
+                      
+
+names(ts_topics) = c("Album", "Topic 1", "Topic 2", "Topic 3", "Topic 4")
+
+knitr::kable(ts_topics, caption = "Topics in Taylor Swift's Albums") %>%
+  kable_styling() %>%
+  kable_classic() %>%
+  add_footnote("Table 3", notation = "number")
+```
+
+
+```{r}
+
+ts_new = read_csv("C:/Users/AB/Desktop/college/fall 2023/text analysis/textstat_tools-master/final_project/Taylor_Swift_Fin.csv")
+ts_new = ts_new[-c(106:110),]
+
+out = textProcessor(ts_new$text, metadata =  ts_new[,4])
+
+out1 = prepDocuments(out$documents, out$vocab, out$meta)
+
+test_stm = stm(out1$documents, vocab = out1$vocab, K = 4, data = out1$meta, verbose = F)
+
+plot(test_stm)
+
+predict_topics<-estimateEffect(formula = 1:4 ~ Plays, stmobj = test_stm, metadata = out$meta, uncertainty = "Global")
+
+
+
+plot(predict_topics, covariate = "Plays", topics = 1:4,
+ model = test_stm, method = "continuous",
+ main = "Expected Proportion of Topics v.s. Number of Plays: Taylor Swift",
+ xlab = "Number of Plays",
+ labeltype =  "custom",
+ custom.labels = c("Nostalgia", "Love", "Time", "Heartbreak")) # make labels the word for the topics so we don't have to make another table
+# REMINDER: get rid of the new vault tracks from 1989 b/c don't have the plays 
+```
+
+
+# Beyonce data processing
+
+```{r}
+# load in csv of song lyrics 
+bey_csv <- read.csv("../final_project/Beyonce_Fin.csv")
+
+# split into albums
+dangerous = bey_csv[1:18,]
+bday = bey_csv[19:34,]
+sasha = bey_csv[35:54,]
+four = bey_csv[55:69,]
+beyonce = bey_csv[70:85,]
+lemonade = bey_csv[86:97,]
+ren = bey_csv[98:113,]
+
+# tokenization 
+st_dangerous = dangerous %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+ 
+st_bday = bday %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_sasha = sasha %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_four = four %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_bey =  beyonce %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_lem = lemonade %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+st_ren = ren %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops)) %>%
+  mutate(stem = wordStem(word))
+
+
+# combine all mutated albums --> kept them seperate above for topic modeling 
+bey_stem_all = rbind(st_dangerous, st_bday, st_sasha, st_four, st_bey,
+                     st_lem, st_ren)
+
+# all albums with no stemming
+bey_no_stem = bey_csv  %>% 
+  unnest_tokens(word, text) %>%
+  filter(!(word %in% stops))
+```
+
+
+# TF-IDF
+
+```{r}
+# without stemming
+# to use the stem words just change word to stem wherever it appears below
+
+# create tf_idf
+bey_album_sum = bey_stem_all %>%
+  group_by(Albums, word) %>%
+  count() %>%
+  ungroup %>%
+  bind_tf_idf(word, Albums, n)
+
+# plot words for each album that occur more frequently than in other albums
+bey_album_sum %>%
+  group_by(Albums) %>%
+  slice_max(tf_idf, n = 5, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, tf_idf, Albums)) %>%
+  ggplot(aes(y = tf_idf, x = word)) +
+  geom_col(fill = "light pink") +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~ Albums, ncol = 4,
+             scales = "free") +
+  labs(y = "TF-IDF", x = NULL)
+
+```
+
+# Sentiment Analysis by album 
+
+```{r}
+# join sentiment dict (bing) to token table without stemming so R can compare 
+# words correctly 
+bey_sent = bey_no_stem %>%
+  inner_join(get_sentiments("bing"))
+
+bey_album_order = c("dangerous", "bday", "sasha", "four", "beyonce",
+                   "lemonade", "ren")
+
+bey_sent %>%
+  group_by(Albums, sentiment) %>%
+  summarize(n_words = n()) %>%
+  ungroup() %>%
+  group_by(Albums) %>%
+  mutate(proportion = n_words / sum(n_words)) %>%
+  ungroup() %>%
+  mutate(Albums = fct_relevel(Albums, bey_album_order)) %>%
+  ggplot(aes(x = Albums, y = proportion, fill = sentiment)) +
+  geom_bar(stat = "identity") +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(title = "Emotional Valence of Beyonce's Albums",
+       x = "Album",
+       y = "Proportion of Sentiment") +
+  scale_x_discrete(labels = c("Dangerously In Love", "Bday", "I am Sasha Fierce", "Four", "Beyonce", "Lemonade", "Renaissance"))
+  
+# use mutate(albums = fct_reorder(albums, total)) %>% right before ggplot
+# to reorder based on album token size --> right now it is in chronological order
+```
+
+# Dangerous Album
+```{r}
+st_dang <- st_dangerous %>%
+  group_by(Songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+dang_corpus <- st_dang$text %>% corpus()
+
+dang_tokens <- dang_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+dang_dfm <- dang_tokens %>%
+  dfm()
+
+dang_stm <- stm(dang_dfm, K = 4, 
+                        data = docvars(dang_tokens), verbose = F)
+plot(dang_stm)
+
+
+topic1 = c("Relationships")
+topic2 = c("Sex")
+topic3 = c("Love")
+topic4 = c("Crazy")
+```
+
+
+# Bday Album
+```{r}
+st_bd <- st_bday %>%
+  group_by(Songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+
+bd_corpus <- st_bd$text %>% corpus()
+
+bd_tokens <- bd_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+bd_dfm <- bd_tokens %>%
+  dfm()
+
+bd_stm <- stm(bd_dfm, K = 4, 
+                        data = docvars(bd_tokens), verbose = F)
+plot(bd_stm)
+
+```
+
+# Sasha Album
+
+```{r}
+st_sash <- st_sasha %>%
+  group_by(Songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+sash_corpus <- st_sash$text %>% corpus()
+
+sash_tokens <- sash_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+sash_dfm <- sash_tokens %>%
+  dfm()
+
+sash_stm <- stm(sash_dfm, K = 4, 
+                        data = docvars(sash_tokens), verbose = F)
+plot(sash_stm)
+
+
+
+```
+
+# Four Album
+```{r}
+st_f <- st_four %>%
+  group_by(Songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+f_corpus <- st_f$text %>% corpus()
+
+f_tokens <- f_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+f_dfm <- f_tokens %>%
+  dfm()
+
+f_stm <- stm(f_dfm, K = 4, 
+                        data = docvars(f_tokens), verbose = F)
+plot(f_stm)
+
+
+```
+
+
+# Beyonce Album
+```{r}
+st_bey1 <- st_bey %>%
+  group_by(Songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+bey_corpus <- st_bey1$text %>% corpus()
+
+bey_tokens <- bey_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+bey_dfm <- bey_tokens %>%
+  dfm()
+
+bey_stm <- stm(bey_dfm, K = 4, 
+                        data = docvars(bey_tokens), verbose = F)
+plot(bey_stm)
+
+
+```
+
+# Lemonade Album
+```{r}
+st_le <- st_lem %>%
+  group_by(Songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+le_corpus <- st_le$text %>% corpus()
+
+le_tokens <- le_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+le_dfm <- le_tokens %>%
+  dfm()
+
+le_stm <- stm(le_dfm, K = 4, 
+                        data = docvars(le_tokens), verbose = F)
+plot(le_stm)
+
+
+```
+
+# Renaissance Album
+```{r}
+st_r <- st_ren %>%
+  group_by(Songs) %>%
+  summarize(text = paste0(word, collapse = " "))
+
+ren_corpus <- st_r$text %>% corpus()
+
+ren_tokens <- ren_corpus %>%
+  corpus() %>%
+  tokens(remove_punct = TRUE, 
+         remove_numbers = TRUE, 
+         remove_symbols = TRUE, 
+         what = "word") %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = stops,
+                selection = "remove")
+
+ren_dfm <- ren_tokens %>%
+  dfm()
+
+ren_stm <- stm(ren_dfm, K = 4, 
+                        data = docvars(ren_tokens), verbose = F)
+plot(ren_stm)
+```
+
+
+# Making topic table 
+```{r}
+topic1 = c("Relationships", "Jealousy", "Safety", "Caring", "Relationships", "Confidence", "Love")
+topic2 = c("Sex", "Moving On", "Dissapearing", "Love", "Sex", "Relationships", "Heartbreak")
+topic3 = c("Love", "Love", "Heartbreak", "Female Empowerment", "Women", "Love", "Relationships")
+topic4 = c("Crazy", "Female Empowerment", "Love", "Partying", "Love", "Heartbreak", "Confidence")
+
+
+bey_topics = data.frame(Album = c("Dangerously In Love", "Bday", "I am Sasha Fierce",
+                                  "4", "Beyonce", "Lemonade", "Renaissance"),
+                       Topic_1 = topic1,
+                       Topic_2 = topic2,
+                       Topic_3 = topic3,
+                       Topic_4 = topic4)
+                      
+
+names(bey_topics) = c("Album", "Topic 1", "Topic 2", "Topic 3", "Topic 4")
+
+knitr::kable(bey_topics) %>%
+  kable_styling() %>%
+  kable_classic() %>%
+  add_footnote("Table 4", notation = "number")
+```
+
+```{r}
+bey_new = bey_csv[-c(9, 11, 16, 20, 26, 50, 98:113),]
+
+out2 = textProcessor(bey_new$text, metadata = bey_new[,c(1, 4)])
+
+out3 = prepDocuments(out2$documents, out2$vocab, out2$meta)
+
+bey_all_stm = stm(out3$documents, vocab = out3$vocab, K = 4, data = out3$meta, verbose = F)
+
+predict_topics<-estimateEffect(formula = 1:4 ~ Plays, stmobj = bey_all_stm, metadata = out3$meta, uncertainty = "Global")
+
+
+plot(bey_all_stm)
+
+
+plot(predict_topics, covariate = "Plays", topics = 1:4,
+ model = bey_all_stm, method = "continuous",
+ main = "Expected Proportion of Topics v.s. Number of Plays: Beyonce",
+ xlab = "Number of Plays",
+ labeltype =  "custom",
+ custom.labels = c("Heart Break", "Love", "Confidence", "Relationships")) # make labels the word for the topics so we don't have to make another table
+# REMINDER: get rid of the new vault tracks from 1989 b/c don't have the plays 
+```
+
+# Corpuses for KWIC
+
+```{r}
+ts_files = list.files("../final_project/TS_albums", full.names = T, 
+                      pattern = "*.txt", recursive = T, include.dirs = T)
+ts_corpus <- ts_files %>%
+  readtext::readtext() %>%
+  mutate(text = quanteda.extras::preprocess_text(text),
+         ) %>%
+  corpus() 
+
+ts = ts_corpus %>%
+  tokens(what = "fastestword", remove_numbers = TRUE, remove_punct = TRUE,
+         remove_symbols = TRUE, remove_seperators = TRUE,
+         remove_twitter = TRUE, remove_hyphens = TRUE) 
+
+ts = ts %>% 
+  tokens_tolower()
+
+ts = tokens_select(ts, remove_lyrics, selection = "remove")
+
+ts = ts_corpus %>%
+  tokens(what = "fastestword", remove_numbers = TRUE, remove_punct = TRUE,
+         remove_symbols = TRUE, remove_seperators = TRUE,
+         remove_twitter = TRUE, remove_hyphens = TRUE) 
+
+ts = ts %>% 
+  tokens_tolower()
+
+ts = tokens_select(ts, remove_lyrics, selection = "remove")
+
+# reading in song lyrics and form a corpus
+bey_files = list.files("../final_project/Beyonce_songs", full.names = T, 
+                      pattern = "*.txt", recursive = T, include.dirs = T)
+bey_corpus <- bey_files %>%
+  readtext::readtext() %>%
+  mutate(text = quanteda.extras::preprocess_text(text),
+         ) %>%
+  corpus() 
+
+# tokenize corpus and remove filler lyrics and make all tokens lowercase 
+
+bey = bey_corpus %>%
+  tokens(what = "fastestword", remove_numbers = TRUE, remove_punct = TRUE,
+         remove_symbols = TRUE, remove_seperators = TRUE,
+         remove_twitter = TRUE, remove_hyphens = TRUE) 
+
+bey = bey %>% 
+  tokens_tolower()
+
+bey = tokens_select(bey, remove_lyrics, selection = "remove")
+```
+
+# KWIC --> Love TS
+
+```{r}
+# create kwic table and convert to a data frame 
+kwic_tab = data.frame(kwic(ts, pattern = "love", window = 5))
+
+# group by song names to find rows where the songs all start
+kwic_tab = kwic_tab %>% 
+  group_by(docname)
+
+
+# some of her popular love songs 
+kwic_love = kwic_tab[sample(1:nrow(kwic_tab), size = 5), -c(2, 3, 7)]
+
+kableExtra::kbl(kwic_love, 
+                caption = "KWIC of Love: Taylor Swift", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 5", notation = "number")
+```
+
+
+# KWIC --> Love Bey
+
+```{r}
+# create kwic table and convert to a data frame 
+kwic_tab_bey = data.frame(kwic(bey, pattern = "love", window = 5))
+
+# group by song names to find rows where the songs all start
+kwic_tab_bey = kwic_tab_bey %>% 
+  group_by(docname)
+
+
+# some of her popular love songs 
+kwic_love_b = kwic_tab_bey[sample(1:nrow(kwic_tab_bey), size = 5), -c(2, 3, 7)]
+
+kableExtra::kbl(kwic_love_b, 
+                caption = " KWIC of Love: Beyonce", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 6", notation = "number")
+```
+
+# KWIC Heartbreak --> Bey
+
+```{r}
+# create kwic table and convert to a data frame 
+kwic_tab_bey = data.frame(kwic(bey, pattern = "heart", window = 5))
+
+# group by song names to find rows where the songs all start
+kwic_tab_bey = kwic_tab_bey %>% 
+  group_by(docname)
+
+
+# some of her popular love songs 
+kwic_love_b = kwic_tab_bey[sample(1:nrow(kwic_tab_bey), size = 5), -c(2, 3, 7)]
+
+kableExtra::kbl(kwic_love_b, 
+                caption = " KWIC of Heartbreak: Beyonce", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 8", notation = "number")
+```
+
+
+# KWIC Heartbreak --> TS
+
+```{r}
+# create kwic table and convert to a data frame 
+kwic_tab = data.frame(kwic(ts, pattern = "heart", window = 5))
+
+# group by song names to find rows where the songs all start
+kwic_tab = kwic_tab %>% 
+  group_by(docname)
+
+
+# some of her popular love songs 
+kwic_love = kwic_tab[sample(1:nrow(kwic_tab), size = 5), -c(2, 3, 7)]
+
+kableExtra::kbl(kwic_love, 
+                caption = " KWIC of Heartbreak: Taylor Swift", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 7", notation = "number")
+```

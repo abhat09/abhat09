@@ -1,0 +1,675 @@
+---
+title: "Capstone EDA"
+output: html_notebook
+---
+
+
+```{r}
+data = read.csv("data_2022_2023.csv")
+```
+
+
+```{r}
+data
+```
+
+```{r}
+library(dplyr)
+data$LastName = tolower(data$LastName)
+data$FirstName = tolower(data$FirstName)
+usa_male_gymnasts <- data %>%
+  filter(Country == "USA" & Gender == "m") %>%
+  group_by(LastName, FirstName) 
+```
+
+```{r}
+
+```
+
+
+```{r}
+usa_female_gymnasts <- data %>%
+  filter(Country == "USA" & Gender == "w") %>%
+  group_by(LastName, FirstName) 
+
+```
+
+
+```{r}
+retired_players = usa_female_gymnasts
+result <- retired_players[, c("LastName", "FirstName")]
+```
+
+
+```{r}
+retired_female = result %>%
+  group_by(LastName, FirstName) %>%
+  summarise()
+
+```
+
+
+```{r}
+retired_male_players = usa_male_gymnasts
+result <- retired_male_players[, c("LastName", "FirstName")]
+retired_male = result %>%
+  group_by(LastName, FirstName) %>%
+  summarise()
+```
+
+
+```{r}
+library(ggplot2)
+ggplot(usa_male_gymnasts, aes(x = Apparatus, y = Score, fill = Apparatus)) +
+  geom_violin(scale = "count", trim = TRUE) +
+  labs(
+    title = "Score Distribution of U.S. Men's Gymnasts by Apparatus",
+    x = "Apparatus",
+    y = "Score"
+  ) +
+  theme_minimal()
+```
+
+
+```{r}
+ggplot(usa_female_gymnasts, aes(x = Apparatus, y = Score, fill = Apparatus)) +
+  geom_violin(scale = "count", trim = TRUE) +
+  labs(
+    title = "Score Distribution of U.S. Women's Gymnasts by Apparatus",
+    x = "Apparatus",
+    y = "Score"
+  ) +
+  theme_minimal()
+```
+```{r}
+ggplot(usa_male_gymnasts, aes(x = Apparatus, y = Score, fill = Apparatus)) +
+  geom_violin(scale = "count", trim = TRUE) +
+  labs(
+    title = "Score Distribution of U.S. Men's Gymnasts by Apparatus",
+    x = "Apparatus",
+    y = "Score"
+  ) +
+  theme_minimal()
+```
+
+
+```{r}
+library(ggplot2)
+
+selected_gymnasts <- c("Simone Biles", "Skye Blakely", "Jordan Chiles", "Shilese Jones", "Joscelyn Roberson")
+
+selected_gymnasts <- data.frame(
+  LastName = c("Biles", "Blakely", "CHILES", "JONES", "Roberson"),
+  FirstName = c("Simone", "Skye", "Jordan", "Shilese", "Joscelyn")
+)
+
+# Filter the data for the selected gymnasts
+selected_gymnasts_data <- usa_female_gymnasts %>%
+  filter(LastName %in% selected_gymnasts$LastName & FirstName %in% selected_gymnasts$FirstName)
+
+# Calculate the mean scores by apparatus
+mean_scores <- selected_gymnasts_data %>%
+  group_by(FirstName, Apparatus) %>%
+  summarize(MeanScore = mean(Score, na.rm = TRUE))
+
+# Create a grouped bar plot to compare mean scores
+ggplot(mean_scores, aes(x = Apparatus, y = MeanScore, fill = FirstName)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+  labs(
+    title = "Mean Score Comparison by Apparatus for Selected Gymnasts",
+    x = "Apparatus",
+    y = "Mean Score"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_fill_brewer(palette = "Set3")
+```
+
+```{r}
+library(ggplot2)
+
+
+selected_gymnasts <- data.frame(
+  LastName = c("loos", "hong", "moldauer", "richard", "young"),
+  FirstName = c("riley", "asher", "yul", "fred", "khoi")
+)
+
+# Filter the data for the selected gymnasts
+selected_gymnasts_data <- usa_male_gymnasts %>%
+  filter(LastName %in% selected_gymnasts$LastName & FirstName %in% selected_gymnasts$FirstName)
+
+# Calculate the mean scores by apparatus
+mean_scores <- selected_gymnasts_data %>%
+  group_by(FirstName, Apparatus) %>%
+  summarize(MeanScore = mean(Score, na.rm = TRUE))
+
+# Create a grouped bar plot to compare mean scores
+ggplot(mean_scores, aes(x = Apparatus, y = MeanScore, fill = FirstName)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+  labs(
+    title = "Mean Score Comparison by Apparatus for Selected Gymnasts",
+    x = "Apparatus",
+    y = "Mean Score"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_fill_brewer(palette = "Set3")
+```
+
+
+
+```{r}
+```
+
+
+```{r}
+library(ggplot2)
+
+selected_gymnasts <- c("Simone Biles", "Skye Blakely", "Jordan Chiles", "Shilese Jones", "Joscelyn Roberson")
+
+selected_gymnasts <- data.frame(
+  LastName = c("Biles", "Blakely", "CHILES", "JONES", "Roberson"),
+  FirstName = c("Simone", "Skye", "Jordan", "Shilese", "Joscelyn")
+)
+
+# Filter the data for the selected gymnasts
+selected_gymnasts_data <- usa_female_gymnasts %>%
+  filter(LastName %in% selected_gymnasts$LastName & FirstName %in% selected_gymnasts$FirstName)
+
+# Calculate the mean scores by apparatus
+mean_scores <- selected_gymnasts_data %>%
+  group_by(FirstName, Apparatus) %>%
+  summarize(MeanScore = mean(Score, na.rm = TRUE))
+
+# Create a grouped bar plot to compare mean scores
+ggplot(mean_scores, aes(x = Apparatus, y = MeanScore, fill = FirstName)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+  labs(
+    title = "Mean Score Comparison by Apparatus for Selected Gymnasts",
+    x = "Apparatus",
+    y = "Mean Score"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_fill_brewer(palette = "Set3")
+```
+
+
+
+```{r}
+colnames(usa_female_gymnasts)
+```
+
+
+```{r}
+library(ggridges)
+
+# Create a ridgeline plot for score distribution by apparatus
+ggplot(usa_male_gymnasts, aes(x = Score, y = Apparatus, fill = Apparatus)) +
+  geom_density_ridges(scale = 3, rel_min_height = 0.01) +
+  labs(
+    title = "Ridgeline Plot of Score Distribution by Apparatus for USA Male Gymnasts",
+    x = "Score",
+    y = "Apparatus"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16),
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_blank(),
+    axis.title = element_text(size = 14),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_fill_brewer(palette = "Set3")
+```
+
+
+```{r}
+library(ggridges)
+
+# Create a ridgeline plot for score distribution by apparatus
+ggplot(usa_female_gymnasts, aes(x = Score, y = Apparatus, fill = Apparatus)) +
+  geom_density_ridges(scale = 3, rel_min_height = 0.01) +
+  labs(
+    title = "Ridgeline Plot of Score Distribution by Apparatus for USA Female Gymnasts",
+    x = "Score",
+    y = "Apparatus"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16),
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_blank(),
+    axis.title = element_text(size = 14),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_fill_brewer(palette = "Set3")
+```
+```{r}
+library(dplyr)
+library(ggplot2)
+library(stats)
+
+# Filter the data for female gymnasts from the USA
+filtered_data <- usa_female_gymnasts %>%
+  filter(Country == "USA")
+# Select the numerical columns for PCA
+numeric_columns <- filtered_data %>%
+  select(D_Score, E_Score, Score)
+
+numeric_columns = subset(numeric_columns, select = -c(FirstName,LastName) )
+
+# Perform PCA
+pca_result <- prcomp(numeric_columns, scale = TRUE)
+# Summary of PCA
+summary(pca_result)
+# Scree plot to visualize explained variance
+screeplot(pca_result, type = "line")
+# Biplot to visualize loadings and scores
+biplot(pca_result)
+```
+
+
+```{r}
+
+#PCA by Apparatus
+library(dplyr)
+library(ggplot2)
+library(stats)
+
+# Filter the data for female gymnasts from the USA
+filtered_data <- usa_female_gymnasts %>%
+  filter(Country == "USA")
+
+# Get unique apparatus values
+unique_apparatus <- unique(filtered_data$Apparatus)
+
+# Create a list to store PCA results and plots
+pca_results <- list()
+
+# Perform PCA for each apparatus and create plots
+for (apparatus in unique_apparatus) {
+  # Subset data for the current apparatus
+  apparatus_data <- filtered_data %>%
+    filter(Apparatus == apparatus)
+  
+  # Select the numerical columns for PCA
+  numeric_columns <- apparatus_data %>%
+    select(D_Score, E_Score, Score)
+  
+  # Perform PCA
+  numeric_columns = subset(numeric_columns, select = -c(FirstName,LastName) )
+  pca_result <- prcomp(numeric_columns, scale = TRUE)
+  
+  # Store PCA result
+  pca_results[[apparatus]] <- pca_result
+  
+  # Create a scree plot for each apparatus
+  screeplot(pca_result, type = "line",
+            main = paste("Scree Plot for PCA -", apparatus))
+  
+  # Create a biplot for each apparatus
+  biplot(pca_result,
+         main = paste("Biplot for PCA -", apparatus))
+}
+
+```
+
+
+
+
+
+
+
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(stats)
+
+# Filter the data for female gymnasts from the USA
+filtered_data <- usa_male_gymnasts %>%
+  filter(Country == "USA")
+# Select the numerical columns for PCA
+numeric_columns <- filtered_data %>%
+  select(D_Score, E_Score, Score)
+
+numeric_columns = subset(numeric_columns, select = -c(FirstName,LastName) )
+numeric_columns <- na.omit(numeric_columns)
+
+# Perform PCA
+pca_result <- prcomp(numeric_columns, scale = TRUE)
+# Summary of PCA
+summary(pca_result)
+# Scree plot to visualize explained variance
+screeplot(pca_result, type = "line")
+# Biplot to visualize loadings and scores
+biplot(pca_result)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+usa_female_gymnasts <- usa_female_gymnasts %>%
+  mutate(LastName = tolower(LastName))
+
+# Define the selected gymnasts
+selected_gymnasts <- data.frame(
+  LastName = c("biles", "blakely", "chiles", "jones", "roberson"),
+  FirstName = c("simone", "skye", "jordan", "shilese", "joscelyn")
+)
+
+# Filter the data for the selected gymnasts
+filtered_data <- usa_female_gymnasts %>%
+  filter(LastName %in% selected_gymnasts$LastName & FirstName %in% selected_gymnasts$FirstName)
+
+get_dates = function(x) {
+ if (length(x) == 1) {
+    parse_date_time(x, orders = c("dmy", "mdy")) %>% 
+      format("%B %Y")
+  } else {
+    max(parse_date_time(x, orders = c("d %b %Y", "%d-%b-%Y", "%b %d %Y", "%b-%d-%Y")), na.rm = TRUE) %>% 
+      format("%B %Y")
+  }
+}
+
+womens_dates = sapply(strsplit(filtered_data$Date, " - |-"), get_dates)
+filtered_data$Time = as.Date(paste0("01-", womens_dates), format="%d-%b %Y")
+
+# Calculate the median score for each month-year and athlete
+median_scores <- filtered_data %>%
+  group_by(FirstName, Time) %>%
+  summarize(MedianScore = median(Score, na.rm = TRUE))
+
+# Create a plot of median score against month-year
+ggplot(median_scores, aes(x = Time, y = MedianScore, color = FirstName)) +
+  geom_line(size = 1.2) +
+  labs(
+    title = "Median Score Over Time for Selected Athletes",
+    x = "Month-Year",
+    y = "Median Score"
+  ) +
+  theme_minimal() +
+  
+  theme(
+    plot.title = element_text(size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  ) 
+```
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+usa_male_gymnasts <- usa_male_gymnasts %>%
+  mutate(LastName = tolower(LastName))
+
+# Define the selected gymnasts
+selected_gymnasts <- data.frame(
+  LastName = c("loos", "hong", "moldauer", "richard", "young"),
+  FirstName = c("riley", "asher", "yul", "fred", "khoi")
+)
+
+# Filter the data for the selected gymnasts
+filtered_data <- usa_male_gymnasts %>%
+  filter(LastName %in% selected_gymnasts$LastName & FirstName %in% selected_gymnasts$FirstName)
+
+get_dates = function(x) {
+ if (length(x) == 1) {
+    parse_date_time(x, orders = c("dmy", "mdy")) %>% 
+      format("%B %Y")
+  } else {
+    max(parse_date_time(x, orders = c("d %b %Y", "%d-%b-%Y", "%b %d %Y", "%b-%d-%Y")), na.rm = TRUE) %>% 
+      format("%B %Y")
+  }
+}
+
+womens_dates = sapply(strsplit(filtered_data$Date, " - |-"), get_dates)
+filtered_data$Time = as.Date(paste0("01-", womens_dates), format="%d-%b %Y")
+
+# Calculate the median score for each month-year and athlete
+median_scores <- filtered_data %>%
+  group_by(FirstName, Time) %>%
+  summarize(MedianScore = median(Score, na.rm = TRUE))
+
+# Create a plot of median score against month-year
+ggplot(median_scores, aes(x = Time, y = MedianScore, color = FirstName)) +
+  geom_line(size = 1.2) +
+  labs(
+    title = "Median Score Over Time for Selected Athletes",
+    x = "Month-Year",
+    y = "Median Score"
+  ) +
+  theme_minimal() +
+  
+  theme(
+    plot.title = element_text(size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+```
+
+```{r}
+library(factoextra)
+numeric_columns <- usa_male_gymnasts %>% select(D_Score, E_Score, Score)
+numeric_columns <- subset(numeric_columns, select = -c(FirstName, LastName))
+numeric_columns <- na.omit(numeric_columns)
+pca_result <- prcomp(numeric_columns, scale = TRUE)
+pc_matrix <- pca_result$x
+
+fviz_pca_biplot(pca_result, label = "var",alpha.ind = .25, alpha.var = .75,
+col.var = "darkblue")
+
+```
+```{r}
+library(factoextra)
+numeric_columns <- usa_female_gymnasts %>% select(D_Score, E_Score, Score)
+numeric_columns <- subset(numeric_columns, select = -c(FirstName, LastName))
+numeric_columns <- na.omit(numeric_columns)
+pca_result <- prcomp(numeric_columns, scale = TRUE)
+pc_matrix <- pca_result$x
+
+fviz_pca_biplot(pca_result, label = "var",alpha.ind = .25, alpha.var = .75,
+col.var = "darkblue")
+
+```
+
+
+```{r}
+library(factoextra)
+create_biplot <- function(data, title) {
+  numeric_columns <- data %>%
+    select(D_Score, E_Score, Score)
+  
+  # Perform PCA
+  numeric_columns <- subset(numeric_columns, select = -c(FirstName, LastName))
+  pca_result <- prcomp(numeric_columns, scale = TRUE)
+  
+  # Create a biplot using factoextra
+  biplot <- fviz_pca_biplot(pca_result,
+                            geom = c("point", "text"),
+                            title = title)
+  
+  print(biplot)
+}
+# Create biplots for men and women separately
+create_biplot(usa_male_gymnasts, "Biplot for Men")
+create_biplot(usa_female_gymnasts, "Biplot for Women")
+```
+
+
+```{r}
+library(factoextra)
+
+# Select relevant columns for PCA
+athlete_summary_female <- usa_female_gymnasts %>%
+  select(FirstName, LastName, Apparatus, Score, E_Score, D_Score)
+
+# Create a numeric subset for PCA
+numeric_columns_female <- athlete_summary_female %>%
+  select(Score, E_Score, D_Score)
+
+# Remove rows with missing values
+numeric_columns_female <- na.omit(numeric_columns_female)
+
+# Remove non-numeric columns
+numeric_columns_female = subset(numeric_columns_female, select = -c(FirstName, LastName))
+
+# Perform PCA
+pca_result_female <- prcomp(numeric_columns_female, scale = TRUE)
+pc_matrix_female <- pca_result_female$x
+
+# Create a PCA biplot with color-coded points by Apparatus
+fviz_pca_biplot(pca_result_female, label = "var", col.ind = athlete_summary_female$Apparatus)
+```
+
+
+```{r}
+library(factoextra)
+
+# Select relevant columns for PCA
+athlete_summary_male <- usa_male_gymnasts %>%
+  select(FirstName, LastName, Apparatus, Score, E_Score, D_Score)
+
+# Create a numeric subset for PCA
+numeric_columns_male <- athlete_summary_male %>%
+  select(Score, E_Score, D_Score)
+
+# Remove rows with missing values
+numeric_columns_male <- na.omit(numeric_columns_male)
+
+# Remove non-numeric columns
+numeric_columns_male <- subset(numeric_columns_male, select = -c(FirstName, LastName))
+
+# Extract the Apparatus column after data cleaning
+apparatus_column <- athlete_summary_male %>%
+  filter(!is.na(Score) & !is.na(E_Score) & !is.na(D_Score)) %>%
+  select(Apparatus)
+
+# Create a factor with Apparatus as levels to ensure correct color coding
+apparatus_factor <- factor(apparatus_column$Apparatus, levels = unique(apparatus_column$Apparatus))
+
+# Perform PCA
+pca_result_male <- prcomp(numeric_columns_male, scale = TRUE)
+pc_matrix_male <- pca_result_male$x
+
+# Create a PCA biplot with color-coded points by Apparatus
+fviz_pca_biplot(pca_result_male, label = "var", col.ind = apparatus_factor)
+
+#each row is an athlete
+#and each column is FX Score, PB Score, 
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(factoextra)
+
+# Assuming your original data frame is named usa_female_gymnasts
+# Adjust the column names accordingly if needed
+
+# Select relevant columns
+selected_columns <- c("FirstName", "LastName", "Apparatus", "Score")
+
+# Filter and arrange the data
+athlete_summary <- usa_female_gymnasts %>%
+  select(all_of(selected_columns)) %>%
+  arrange(FirstName, LastName, Apparatus)
+
+athlete_summary_wide <- athlete_summary %>%
+  group_by(FirstName, LastName, Apparatus) %>%
+  summarize(ave_score = mean(Score, na.rm = TRUE),
+            .groups = "drop") %>%
+  pivot_wider(names_from = Apparatus, values_from = ave_score)
+
+# Extract athlete names
+athlete_names <- athlete_summary_wide %>%
+  select(FirstName, LastName)
+
+# Extract numeric columns for PCA
+numeric_columns <- athlete_summary_wide %>%
+  select(-FirstName, -LastName, -VT1, -VT2) %>%
+  na.omit()
+
+# Perform PCA
+pca_result <- prcomp(numeric_columns, scale = TRUE)
+pc_matrix <- pca_result$x
+
+fviz_pca_biplot(pca_result, label = "var")
+
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(factoextra)
+
+# Select relevant columns
+selected_columns <- c("FirstName", "LastName", "Apparatus", "Score")
+
+# Filter and arrange the data
+athlete_summary <- usa_male_gymnasts %>%
+  select(all_of(selected_columns)) %>%
+  arrange(FirstName, LastName, Apparatus)
+
+# Pivot the data to wide format
+athlete_summary_wide <- athlete_summary %>%
+  group_by(FirstName, LastName, Apparatus) %>%
+  summarize(ave_score = mean(Score, na.rm = TRUE),
+            .groups = "drop") %>%
+  pivot_wider(names_from = Apparatus, values_from = ave_score)
+
+# Extract athlete names
+athlete_names <- athlete_summary_wide %>%
+  select(FirstName, LastName)
+
+# Extract numeric columns for PCA
+numeric_columns <- athlete_summary_wide %>%
+  select(-FirstName, -LastName, -VT1, -VT2) %>%
+  na.omit()
+
+#numeric_columns = subset(numeric_columns, select = -c(FirstName, LastName))
+
+# Perform PCA
+pca_result <- prcomp(numeric_columns, scale = TRUE)
+pc_matrix <- pca_result$x
+
+fviz_pca_biplot(pca_result, label = "var")
+
+```
+

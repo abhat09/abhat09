@@ -1,0 +1,735 @@
+---
+title: 'Coffee Break Experiment #1'
+author: "Anusha Bhat and Aditi Mannem"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warnings = FALSE, messages = FALSE)
+```
+
+
+```{r}
+library(ggraph)
+library(tidyverse)
+library(quanteda)
+library(ggplot2)
+library(quanteda.textstats)
+library(readtext)
+library(kableExtra)
+load("../data/multiword_expressions.rda")
+source("../R/dispersion_functions.R")
+source("../R/helper_functions.R")
+source("../R/utility_functions.R")
+source("../R/collocation_functions.R")
+source("../R/keyness_functions.R")
+set.seed(1234)
+```
+
+# Making the ya corpus
+
+```{r}
+# removed symbols, punctuation, and conjunctions, and made all the words in
+# lower case
+files_list = list.files("../data/ya_corpus", full.names = T, pattern = "*.txt")
+
+ya_corpus <- sample(files_list, 7) %>%
+  readtext::readtext() %>%
+  mutate(text = quanteda.extras::preprocess_text(text)) %>%
+  corpus() 
+
+ya = ya_corpus %>%
+  tokens(what = "fastestword", remove_numbers = TRUE, remove_punct = TRUE,
+         remove_symbols = TRUE, remove_seperators = TRUE,
+         remove_twitter = TRUE, remove_hyphens = FALSE)
+
+ya = tokens_tolower(ya)
+ya = tokens_select(ya, c("a", "an", "the"), selection = "remove")
+conjunctions = c("for", "and", "nor", "yet", "so", "still", "besides", 
+                         "otherwise", "or else", "nevertheless")
+ya = tokens_select(ya, conjunctions, selection = "remove")
+```
+
+
+# Making the childrens corpus
+
+```{r}
+# removed symbols, punctuation, and conjunctions, and made all the words in
+# lower case
+files_list2 = list.files("../data/childrens", full.names = T, pattern = "*.txt")
+
+ch_corpus <- sample(files_list2, 50) %>%
+  readtext::readtext() %>%
+  mutate(text = quanteda.extras::preprocess_text(text)) %>%
+  corpus() 
+
+ch = ch_corpus %>%
+  tokens(what = "fastestword", remove_numbers = TRUE, remove_punct = TRUE,
+         remove_symbols = TRUE, remove_seperators = TRUE,
+         remove_twitter = TRUE, remove_hyphens = FALSE)
+
+ch = tokens_tolower(ch)
+ch = tokens_select(ch, c("a", "an", "the"), selection = "remove")
+ch = tokens_select(ch, conjunctions, 
+                   selection = "remove")
+```
+
+# making our subcorpora
+```{r}
+# body parts corpora
+body_parts = c("face", "lips", "eyes", "mouth", "nose", "ears", "fingers",
+               "hands", "hair", "skin", "blood", "bones", "ear", "finger", "eye",
+               "faces", "lip", "hand", "ankle", "ankles", "wrist", "wrists", "back",
+               "backs", "stomach", "foot", "feet")
+ya_bp = tokens_select(ya, body_parts, selection = "keep")
+
+ch_bp = tokens_select(ch, body_parts, selection = "keep")
+
+# pronouns corpora
+pronouns = c("she", "he", "they", "them", "their", "hers", "his",
+           "theirs", "him", "i", "you", "it", "we", "us", "me", "mine",
+           "ours", "its", "your", "yours")
+ya_pro = tokens_select(ya, pronouns, selection = "keep")
+ch_pro = tokens_select(ch, pronouns, selection = "keep")
+```
+
+#EDA
+
+```{r}
+# counting the tokens in each corpus -> for of data section
+# summary of the corpora
+knitr::kable(summary(ya_corpus), 
+             caption = "Summary of the Young Adult's Corpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 1", notation = "number")
+
+knitr::kable(head(summary(ch_corpus), 10),
+      caption = "Sample Summary of the Children's Corpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number")
+
+# corpus composition
+ya_ntoks = data.frame(Tokens = ntoken(ya))
+ya_ntoks = ya_ntoks %>% 
+  mutate(Percent = 100 * Tokens/colSums(ya_ntoks))
+
+knitr::kable(ya_ntoks) %>%
+  kable_styling() %>%
+  add_footnote("Table 1", notation = "number") %>%
+  kable_classic()
+
+ch_ntoks = data.frame(Tokens = ntoken(ch))
+ch_ntoks = ch_ntoks %>% 
+  mutate(Percent = 100 * Tokens/colSums(ch_ntoks))
+
+knitr::kable(head(ch_ntoks[order(ch_ntoks$Tokens, decreasing = TRUE), ], 10)) %>%
+  kable_styling() %>%
+  add_footnote("Table 2", notation = "number") %>% 
+  kable_classic()
+
+# total tokens in each corpus 
+colSums(ya_ntoks)
+colSums(ch_ntoks)
+```
+
+```{r}
+# making a frequency table for ya
+ya_freq = textstat_frequency(dfm(ya))
+ya_freq = mutate(ya_freq, RelFreq = (frequency/sum(frequency))*1000000)
+knitr::kable(head(ya_freq, 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+
+
+# making a frequency table for childrens
+ch_freq = textstat_frequency(dfm(ch))
+ch_freq = mutate(ch_freq, RelFreq = (frequency/sum(frequency))*1000000)
+knitr::kable(head(ch_freq, 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 4", notation = "number") %>% 
+  kable_classic()
+```
+
+
+```{r}
+# ya histogram
+bin_width <- function(x){
+  2 * IQR(x) / length(x)^(1/3)
+}
+
+# Create the dfm 
+ya_prop_dfm <- dfm_weight(dfm(ya), scheme = "prop")
+ya_word_df <- dfm_select(ya_prop_dfm, "^my$|^i$|^to$|^of$|^he$", 
+                         valuetype = "regex")
+
+# Normalize to 10000 words.
+ya_word_df <- ya_word_df %>% 
+  convert(to = "data.frame") %>%
+  mutate(my = my*10000) %>%
+  mutate(i = i*10000) %>% 
+  mutate(to = to*10000) %>%
+  mutate(of = of*10000) %>%
+  mutate(he = he*10000)
+
+# Use "pivot_longer" to go from a wide format to a long one
+ya_word_df <- ya_word_df %>% 
+  pivot_longer(!doc_id, names_to = "token", values_to = "RF") %>% 
+  mutate(token = factor(token))
+
+ggplot(ya_word_df,aes(x = RF, color = token, fill = token)) + 
+  geom_histogram(binwidth = bin_width(ya_word_df$RF), alpha=.5, 
+                 position = "identity") +
+  theme_classic() +
+  labs(x = "Relative Frequency (per mil. words)", y = "Count", 
+       subtitle = "Figure 1",
+       title = "Relative Frequency for the Top 5 Tokens From the Young Adult's Corpus") +
+  theme(axis.text = element_text(size=5)) +
+  facet_wrap(~ token)  
+
+ggplot(ya_word_df, aes(x = RF)) +
+  geom_density(aes(y = after_stat(density), fill = token), alpha = 0.5) +
+  labs( x = "Relative Frequency (per mill. words)", y = "Count",
+      subtitle = "Figure 1",
+      title = "Density Curves for the Top 5 Tokens From the Young Adults Corpus")
+```
+
+```{r}
+# childrens histogram
+bin_width <- function(x){
+  2 * IQR(x) / length(x)^(1/3)
+}
+# Create the dfm 
+ch_prop_dfm <- dfm_weight(dfm(ch), scheme = "prop")
+ch_word_df <- dfm_select(ch_prop_dfm, "^he$|^of$|^to$|^was$|^in$", valuetype = "regex")
+
+# Normalize to 10000 words.
+ch_word_df <- ch_word_df %>% 
+  convert(to = "data.frame") %>%
+  mutate(he = he*10000) %>%
+  mutate(of = of*10000) %>% # altered this from lab4 to match new words 
+  mutate(to = to*10000) %>%
+  mutate(was = was*10000) %>%
+  mutate(`in` = `in`*10000)
+
+# Use "pivot_longer" to go from a wide format to a long one
+ch_word_df <- ch_word_df %>% 
+  pivot_longer(!doc_id, names_to = "token", values_to = "RF") %>% 
+  mutate(token = factor(token))
+
+ggplot(ch_word_df,aes(x = RF, color = token, fill = token)) + 
+  geom_histogram(binwidth = bin_width(ch_word_df$RF), alpha=.5, 
+                 position = "identity") +
+  theme_classic() +
+  labs(x = "Relative Frequency (per mil. words)", y = "Count", 
+       subtitle = "Figure 3",
+       title = "Relative Frequency of the Top 5 Tokens From the Children's Corpus") +
+  theme(axis.text = element_text(size=5)) +
+  facet_wrap(~ token)
+
+ggplot(ch_word_df, aes(x = RF)) +
+  geom_density(aes(y = after_stat(density), fill = token), alpha = 0.5) +
+  labs( x = "Relative Frequency (per mill. words)", y = "Count",
+      subtitle = "Figure 4",
+      title = "Density Curves for the Top 5 Tokens From the Children's Corpus")
+```
+
+
+```{r}
+# collocation for ya corpus
+bc_collocations <- collocates_by_MI(ya, "because")
+since_collocations <- collocates_by_MI(ya, "since")
+
+bc_ya <- bc_collocations %>% filter(col_freq >= 5 & MI_1 >= 4)
+since_ya <- since_collocations %>% filter(col_freq >= 5 & MI_1 >= 4)
+
+knitr::kable(head(bc_ya[order(bc_ya$col_freq, decreasing = TRUE),]), 
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 4", notation = "number") %>%
+  kable_classic()
+knitr::kable(head(since_ya[order(since_ya$col_freq, decreasing = TRUE),]), 
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 5", notation = "number") %>%
+  kable_classic()
+```
+
+```{r}
+# collocation for childrens corpus
+he_collocations <- collocates_by_MI(ch, "he")
+ch_to_collocations <- collocates_by_MI(ch, "to")
+
+he_ch <- he_collocations %>% filter(col_freq >= 5 & MI_1 >= 5)
+to_ch <- ch_to_collocations %>% filter(col_freq >= 5 & MI_1 >= 5)
+
+knitr::kable(head(he_ch[order(he_ch$col_freq, decreasing = TRUE),]), 
+             digits = 5,
+             caption = "Sample Collocations of `he` in the Children's Corpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 9", notation = "number")
+knitr::kable(head(to_ch[order(to_ch$col_freq, decreasing = TRUE),]), 
+             digits = 5,
+             caption = "Sample Collocations of `to` in the Children's Corpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 10", notation = "number")
+```
+
+```{r   }
+# collocation network for ya
+net1 <- col_network(bc_ya, since_ya)
+
+ggraph(net1, weight = link_weight, layout = "stress") + 
+  geom_edge_link(color = "gray80", alpha = .75) + 
+  geom_node_point(aes(alpha = node_weight, size = 3, color = n_intersects)) +
+  geom_node_text(aes(label = label), repel = T, size = 3) +
+  scale_alpha(range = c(0.2, 0.9)) +
+  theme_graph() +
+  theme(legend.position="none") +
+  labs(subtitle = "Figure 2")
+```
+
+```{r}
+# collocation network for childrens
+net1 <- col_network(he_ch, to_ch)
+
+ggraph(net1, weight = link_weight, layout = "stress") + 
+  geom_edge_link(color = "gray80", alpha = .75) + 
+  geom_node_point(aes(alpha = node_weight, size = 3, color = n_intersects)) +
+  geom_node_text(aes(label = label), repel = T, size = 3) +
+  scale_alpha(range = c(0.2, 0.9)) +
+  theme_graph() +
+  theme(legend.position="none") +
+  labs(subtitle = "Figure 5")
+```
+# Differences: body parts 
+
+```{r}
+# corpus compostion
+ya_bp_ntoks = data.frame(Tokens = ntoken(ya_bp))
+ya_bp_ntoks = ya_bp_ntoks %>% 
+  mutate(Percent = 100 * Tokens/colSums(ya_bp_ntoks))
+
+ch_bp_ntoks = data.frame(Tokens = ntoken(ch_bp))
+ch_bp_ntoks = ch_bp_ntoks %>% 
+  mutate(Percent = 100 * Tokens/colSums(ch_bp_ntoks))
+
+
+# total token counts
+colSums(ya_bp_ntoks)
+colSums(ch_bp_ntoks)
+```
+
+```{r}
+# making a frequency table
+ya_bp_freq = textstat_frequency(dfm(ya_bp))
+ya_bp_freq = mutate(ya_bp_freq, RelFreq = (frequency/sum(frequency))*1000000)
+knitr::kable(head(ya_bp_freq, 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 5", notation = "number") %>%
+  kable_classic()
+
+ch_bp_freq = textstat_frequency(dfm(ch_bp))
+ch_bp_freq = mutate(ch_bp_freq, RelFreq = (frequency/sum(frequency))*1000000)
+knitr::kable(head(ch_bp_freq, 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 6", notation = "number") %>%
+  kable_classic()
+```
+
+
+```{r}
+# relative frequency for ya_bp
+ya_bp_prop_dfm <- dfm_weight(dfm(ya_bp), scheme = "prop")
+ya_bp_word_df <- dfm_select(ya_bp_prop_dfm, 
+                            "^eyes$|^back$|^face$|^hand$|^hands$", 
+                            valuetype = "regex")
+
+# Normalize to 10000 words.
+ya_bp_word_df <- ya_bp_word_df %>% 
+  convert(to = "data.frame") %>%
+  mutate(eyes = back*10000) %>%
+  mutate(face = face*10000) %>% # altered this from lab4 to match new words 
+  mutate(hand = hand*10000) %>%
+  mutate(back = back*10000) %>%
+  mutate(hands = hands*10000)
+
+# Use "pivot_longer" to go from a wide format to a long one
+ya_bp_word_df <- ya_bp_word_df %>% 
+  pivot_longer(!doc_id, names_to = "token", values_to = "RF") %>% 
+  mutate(token = factor(token))
+
+ggplot(ya_bp_word_df,aes(x = RF, color = token, fill = token)) + 
+  geom_histogram(binwidth = bin_width(ya_bp_word_df$RF), alpha=.5, 
+                 position = "identity") +
+  theme_classic() +
+  labs(x = "Relative Frequency (per mil. words)", y = "Count", 
+       subtitle = "Figure 7",
+       title = "Rel. Frequency of the Top 5Tokens From the Young Adult's Body Subcorpus") +
+  theme(axis.text = element_text(size=5)) +
+  facet_wrap(~ token)
+
+ggplot(ya_bp_word_df, aes(x = RF)) +
+  geom_density(aes(y = after_stat(density), fill = token), alpha = 0.5) +
+  labs( x = "Relative Frequency (per mill. words)", y = "Count",
+      subtitle = "Figure 8",
+      title = "Density Curves for Top 5 Tokens From the Young Adult's Body Subcorpus")
+```
+
+```{r}
+# relative frequency for ch_bp
+ch_bp_prop_dfm <- dfm_weight(dfm(ch_bp), scheme = "prop")
+ch_bp_word_df <- dfm_select(ch_bp_prop_dfm, 
+                            "^eyes$|^back$|^feet$|^hand$|^hands$", 
+                            valuetype = "regex")
+
+# Normalize to 10000 words.
+ch_bp_word_df <- ch_bp_word_df %>% 
+  convert(to = "data.frame") %>%
+  mutate(eyes = back*10000) %>%
+  mutate(feet = feet*10000) %>% # altered this from lab4 to match new words 
+  mutate(hand = hand*10000) %>%
+  mutate(back = back*10000) %>%
+  mutate(hands = hands*10000)
+
+# Use "pivot_longer" to go from a wide format to a long one
+ch_bp_word_df <- ch_bp_word_df %>% 
+  pivot_longer(!doc_id, names_to = "token", values_to = "RF") %>% 
+  mutate(token = factor(token))
+
+ggplot(ch_bp_word_df,aes(x = RF, color = token, fill = token)) + 
+  geom_histogram(binwidth = bin_width(ch_bp_word_df$RF), alpha=.5, 
+                 position = "identity") +
+  theme_classic() +
+  labs(x = "Relative Frequency (per mil. words)", y = "Count", 
+       subtitle = "Figure 9",
+       title = "Rel. Frequency of the Top 5 Tokens From the Children's Body Subcorpus") +
+  theme(axis.text = element_text(size=5)) +
+  facet_wrap(~ token)
+
+ggplot(ch_bp_word_df, aes(x = RF)) +
+  geom_density(aes(y = after_stat(density), fill = token), alpha = 0.5) +
+  labs( x = "Relative Frequency (per mill. words)", y = "Count",
+      subtitle = "Figure 10",
+      title = "Density Curves for Top 5 Tokens From the Children's Body Subcorpus")
+```
+
+```{r  }
+# collocation for ya bp
+eyes_ya_collocations <- collocates_by_MI(ya, "eyes")
+back_ya_collocations <- collocates_by_MI(ya, "back")
+
+eyes_ya <- eyes_ya_collocations %>% filter(col_freq >= 5 & MI_1 >= 6)
+back_ya <- back_ya_collocations %>% filter(col_freq >= 5 & MI_1 >= 6)
+
+knitr::kable(head(eyes_ya[order(eyes_ya$col_freq, decreasing = TRUE),]), 
+             digits = 5,
+             caption = "Sample Collocations of `eyes` in the Young Adult's Body Subcorpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 13", notation = "number")
+knitr::kable(head(back_ya[order(back_ya$col_freq, decreasing = TRUE),]), 
+             digits = 5,
+             caption = "Sample Collocations of `back` in the Young Adult's Body Subcorpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 14", notation = "number")
+
+# collocation for ch bp
+eyes_ch_collocations <- collocates_by_MI(ch, "eyes")
+back_ch_collocations <- collocates_by_MI(ch, "back")
+
+eyes_ch <- eyes_ch_collocations %>% filter(col_freq >= 5 & MI_1 >= 4)
+back_ch <- back_ch_collocations %>% filter(col_freq >= 5 & MI_1 >= 4)
+
+knitr::kable(head(eyes_ch[order(eyes_ch$col_freq, decreasing = TRUE),]), 
+             digits = 5,
+             caption = "Sample Collocations of `eyes` in the Children's Body Subcorpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 15", notation = "number")
+knitr::kable(head(back_ch[order(back_ch$col_freq, decreasing = TRUE),]), 
+             digits = 5,
+             caption = "Sample Collocations of `back` in the Children's Body Subcorpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 16", notation = "number")
+```
+
+```{r   }
+# collocation network for ya bp
+net_ya_bp <- col_network(eyes_ya, back_ya)
+
+ggraph(net_ya_bp, weight = link_weight, layout = "stress") + 
+  geom_edge_link(color = "gray80", alpha = .75) + 
+  geom_node_point(aes(alpha = node_weight, size = 3, color = n_intersects)) +
+  geom_node_text(aes(label = label), repel = T, size = 3) +
+  scale_alpha(range = c(0.2, 0.9)) +
+  theme_graph() +
+  theme(legend.position="none") +
+  labs(subtitle = "Figure 6")
+```
+
+```{r   }
+net_ch_bp <- col_network(eyes_ch, back_ch)
+
+ggraph(net_ch_bp, weight = link_weight, layout = "stress") + 
+  geom_edge_link(color = "gray80", alpha = .75) + 
+  geom_node_point(aes(alpha = node_weight, size = 3, color = n_intersects)) +
+  geom_node_text(aes(label = label), repel = T, size = 3) +
+  scale_alpha(range = c(0.2, 0.9)) +
+  theme_graph() +
+  theme(legend.position="none") +
+  labs(subtitle = "Figure 7")
+```
+
+# differences: pronouns
+
+```{r}
+# corpus compostion
+ya_pro_ntoks = data.frame(Tokens = ntoken(ya_pro))
+ya_pro_ntoks = ya_pro_ntoks %>% 
+  mutate(Percent = 100 * Tokens/colSums(ya_pro_ntoks))
+
+ch_pro_ntoks = data.frame(Tokens = ntoken(ch_pro))
+ch_pro_ntoks = ch_pro_ntoks %>% 
+  mutate(Percent = 100 * Tokens/colSums(ch_pro_ntoks))
+
+
+# total token counts
+colSums(ya_pro_ntoks)
+colSums(ch_pro_ntoks)
+```
+```{r}
+# making a frequency table
+ya_pro_freq = textstat_frequency(dfm(ya_pro))
+ya_pro_freq = mutate(ya_pro_freq, RelFreq = (frequency/sum(frequency))*1000000)
+knitr::kable(head(ya_pro_freq, 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 7", notation = "number") %>%
+  kable_classic()
+
+ch_pro_freq = textstat_frequency(dfm(ch_pro))
+ch_pro_freq = mutate(ch_pro_freq, RelFreq = (frequency/sum(frequency))*1000000)
+knitr::kable(head(ch_pro_freq, 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 8", notation = "number") %>%
+  kable_classic()
+```
+
+```{r}
+# relative frequency for ya_bp
+ya_pro_prop_dfm <- dfm_weight(dfm(ya_pro), scheme = "prop")
+ya_pro_word_df <- dfm_select(ya_pro_prop_dfm, 
+                            "^i$|^he$|^it$|^you$|^me$", 
+                            valuetype = "regex")
+
+# Normalize to 10000 words.
+ya_pro_word_df <- ya_pro_word_df %>% 
+  convert(to = "data.frame") %>%
+  mutate(i = i*10000) %>%
+  mutate(he = he*10000) %>% # altered this from lab4 to match new words 
+  mutate(it = it*10000) %>%
+  mutate(you = you*10000) %>%
+  mutate(me = me*10000)
+
+# Use "pivot_longer" to go from a wide format to a long one
+ya_pro_word_df <- ya_pro_word_df %>% 
+  pivot_longer(!doc_id, names_to = "token", values_to = "RF") %>% 
+  mutate(token = factor(token))
+
+ggplot(ya_pro_word_df,aes(x = RF, color = token, fill = token)) + 
+  geom_histogram(binwidth = bin_width(ya_pro_word_df$RF), alpha=.5, 
+                 position = "identity") +
+  theme_classic() +
+  labs(x = "Relative Frequency (per mil. words)", y = "Count", 
+       subtitle = "Figure 15",
+       title = "Rel. Frequency of the Top 5 Tokens From the Young Adult's  Pronouns Subcorpus") +
+  theme(axis.text = element_text(size=5)) +
+  facet_wrap(~ token)
+
+ggplot(ya_pro_word_df, aes(x = RF)) +
+  geom_density(aes(y = after_stat(density), fill = token), alpha = 0.5) +
+  labs( x = "Relative Frequency (per mill. words)", y = "Count",
+      subtitle = "Figure 16",
+      title = "Density Curves for Top 5 Tokens From the Young Adult's Pronouns Subcorpus")
+```
+
+```{r}
+# relative frequency for ya_bp
+ch_pro_prop_dfm <- dfm_weight(dfm(ch_pro), scheme = "prop")
+ch_pro_word_df <- dfm_select(ch_pro_prop_dfm, 
+                            "^i$|^he$|^it$|^you$|^she$", 
+                            valuetype = "regex")
+
+# Normalize to 10000 words.
+ch_pro_word_df <- ch_pro_word_df %>% 
+  convert(to = "data.frame") %>%
+  mutate(i = i*10000) %>%
+  mutate(he = he*10000) %>% # altered this from lab4 to match new words 
+  mutate(it = it*10000) %>%
+  mutate(you = you*10000) %>%
+  mutate(she = she*10000)
+
+# Use "pivot_longer" to go from a wide format to a long one
+ch_pro_word_df <- ch_pro_word_df %>% 
+  pivot_longer(!doc_id, names_to = "token", values_to = "RF") %>% 
+  mutate(token = factor(token))
+
+ggplot(ch_pro_word_df,aes(x = RF, color = token, fill = token)) + 
+  geom_histogram(binwidth = bin_width(ch_pro_word_df$RF), alpha=.5, 
+                 position = "identity") +
+  theme_classic() +
+  labs(x = "Relative Frequency (per mil. words)", y = "Count", 
+       subtitle = "Figure 17",
+       title = "Rel. Frequency of the Top 5 Tokens From the Young Children's Pronouns Subcorpus") +
+  theme(axis.text = element_text(size=5)) +
+  facet_wrap(~ token)
+
+ggplot(ch_pro_word_df, aes(x = RF)) +
+  geom_density(aes(y = after_stat(density), fill = token), alpha = 0.5) +
+  labs( x = "Relative Frequency (per mill. words)", y = "Count",
+      subtitle = "Figure 18",
+      title = "Density Curves for Top 5 Tokens From the Children's Pronouns Subcorpus")
+```
+```{r}
+# collocation for ya bp
+i_pro_ya_collocations <- collocates_by_MI(ya, "i")
+he_pro_ya_collocations <- collocates_by_MI(ya, "he")
+```
+
+```{r}
+i_pro_ya <- i_pro_ya_collocations %>% filter(col_freq >= 100 & MI_1 >= 4)
+he_pro_ya <- he_pro_ya_collocations %>% filter(col_freq >= 100 & MI_1 >= 4)
+
+knitr::kable(head(i_pro_ya[order(i_pro_ya$col_freq, decreasing = TRUE),]), 
+             digits = 5,
+             caption = "Sample Collocations of `i` in the Young Adult's Pronouns Subcorpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 19", notation = "number")
+knitr::kable(head(he_pro_ya[order(he_pro_ya$col_freq, decreasing = TRUE),]), 
+             digits = 5,
+             caption = "Sample Collocations of `he` in the Young Adult's Pronouns Subcorpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 20", notation = "number")
+```
+
+```{r}
+# collocation for ch bp
+he_pro_ch_collocations <- collocates_by_MI(ch, "he")
+it_pro_ch_collocations <- collocates_by_MI(ch, "i")
+```
+
+```{r}
+he_pro_ch <- he_pro_ch_collocations %>% filter(col_freq >= 30 & MI_1 >= 4)
+it_pro_ch <- it_pro_ch_collocations %>% filter(col_freq >= 10 & MI_1 >= 4)
+
+knitr::kable(head(he_pro_ch [order(he_pro_ch $col_freq, decreasing = TRUE),]), 
+             digits = 5,
+             caption = "Sample Collocations of `he` in the Children's Pronouns Subcorpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 21", notation = "number")
+knitr::kable(head(it_pro_ch[order(it_pro_ch$col_freq, decreasing = TRUE),]), 
+             digits = 5,
+             caption = "Sample Collocations of `i` in the Children's Pronouns Subcorpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 22", notation = "number")
+```
+
+```{r   }
+# collocation network for ya pro
+net_ya_pro <- col_network(i_pro_ya, he_pro_ya)
+
+ggraph(net_ya_pro, weight = link_weight, layout = "stress") + 
+  geom_edge_link(color = "gray80", alpha = .75) + 
+  geom_node_point(aes(alpha = node_weight, size = 3, color = n_intersects)) +
+  geom_node_text(aes(label = label), repel = T, size = 3) +
+  scale_alpha(range = c(0.2, 0.9)) +
+  theme_graph() +
+  theme(legend.position="none") +
+  labs(subtitle = "Figure 8")
+```
+
+```{r   }
+# collocation network for ch pro
+net_ch_pro <- col_network(it_pro_ch, he_pro_ch)
+
+ggraph(net_ch_pro, weight = link_weight, layout = "stress") + 
+  geom_edge_link(color = "gray80", alpha = .75) + 
+  geom_node_point(aes(alpha = node_weight, size = 3, color = n_intersects)) +
+  geom_node_text(aes(label = label), repel = T, size = 3) +
+  scale_alpha(range = c(0.2, 0.9)) +
+  theme_graph() +
+  theme(legend.position="none") +
+  labs(subtitle = "Figure 9")
+```
+
+# differences: keyness
+
+```{r}
+# overall keyness
+ya_dfm <- ya %>%
+  tokens_compound(pattern = phrase(multiword_expressions)) %>%
+  dfm()
+
+ch_dfm <- ch %>%
+  tokens_compound(pattern = phrase(multiword_expressions)) %>%
+  dfm()
+
+overall_key = keyness_table(ya_dfm, ch_dfm)
+
+knitr::kable(head(overall_key[order(overall_key$LL, decreasing = TRUE),], 10),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 9", notation = "number") %>% 
+  kable_classic()
+
+knitr::kable(head(overall_key[order(overall_key$LR, decreasing = TRUE),], 10),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 10", notation = "number") %>% 
+  kable_classic()
+```
+
+# differences: sentiment analysis
+
+```{r}
+library(syuzhet)
+
+# str_squish() is a useful function from readr for getting rid of extra spaces, carriage returns, etc.
+mb <- str_squish(ya_corpus)
+
+# chunk the novel into sentences
+mb_sentences <- get_sentences(mb)
+
+# calculate and return sentiment scores
+mb_sentiment <- get_sentiment(mb_sentences)
+
+mb_dct <- get_dct_transform(mb_sentiment, low_pass_size = 7, x_reverse_len = 100, scale_vals = FALSE, scale_range = TRUE)
+
+mb_dct <- data.frame(dct = mb_dct) %>%
+  rownames_to_column("time") %>%
+  mutate(time = as.numeric(time))
+```
+
+```{r}
+# str_squish() is a useful function from readr for getting rid of extra spaces, carriage returns, etc.
+mb3 <- str_squish(ch_corpus)
+
+# chunk the novel into sentences
+mb3_sentences <- get_sentences(mb3)
+
+# calculate and return sentiment scores
+mb3_sentiment <- get_sentiment(mb3_sentences)
+
+mb3_dct <- get_dct_transform(mb3_sentiment, low_pass_size = 7, x_reverse_len = 100, scale_vals = FALSE, scale_range = TRUE)
+
+mb3_dct <- data.frame(dct = mb3_dct) %>%
+  rownames_to_column("time") %>%
+  mutate(time = as.numeric(time))
+```
+
+```{r}
+plot(mb_dct, type ="l", xlab = "Narrative Time", ylab = "Emotional Valence", col = "red", main = "Emotional Valence over Time")
+lines(mb3_dct$time, mb3_dct$dct, col = "blue")
+legend(60, -0.5, legend = c("Young Adult's Corpus", "Children's Corpus"), 
+       col = c("red", "blue"), lty = 1, cex = 0.5)
+
+```

@@ -1,0 +1,470 @@
+---
+title: "Capstone"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(lubridate)
+library(ggseas)
+library(GGally)
+library(matrixStats)
+library(trackdown)
+library(factoextra)
+library(gridExtra)
+# https://github.com/ucsas/gym2024data/blob/main/README.md
+```
+
+
+```{r setup, include=FALSE}
+data = read.csv("data_2017_2021.csv")
+womens_data = data[which(data["Gender"] == 'w'),]
+# mens_data = data[which(data["Gender"] != 'w'),]
+head(womens_data)
+
+#split by round type
+ggplot(womens_data, aes(x=Score, fill=Country)) +
+  geom_histogram(position="dodge") + facet_wrap(~Country)
+
+hist(womens_data$Score, main="Distribution of Scores", col="cyan4")
+
+womens_data %>% group_by(Country) %>% summarise(min_score = min(Score, na.rm=T),
+                                                 max_score = max(Score, na.rm=T),
+                                                 mean_score = mean(Score, na.rm=T),
+                                                 med_score = median(Score, na.rm=T),
+                                                 std_score = sd(Score, na.rm=T))
+```
+
+```{r, fig.width = 10, fig.height=4}
+# comparing men and womens average scores scross apparatus
+data = read.csv("data_2022_2023.csv")
+data = distinct(data)
+data$Apparatus = toupper(data$Apparatus)
+data$Apparatus = toupper(data$Apparatus)
+womens_data = data[which(data["Gender"] == 'w'),]
+mens_data = data[which(data["Gender"] == 'm'),]
+par(mfrow=c(1,2))
+hist(data[which(data$Gender=='w'),]$Score,
+     col = 'cyan4',
+     xlab = 'Score',
+     main='Distribution of Apparatus Scores')
+womens_medians = womens_data %>% group_by(Apparatus) %>% summarise(med = median(Score, na.rm=T))
+mens_medians = mens_data %>% group_by(Apparatus) %>% summarise(med = median(Score, na.rm=T))
+head(mens_data)
+ggplot(womens_data, aes(Score)) + 
+  geom_histogram(position="dodge") + facet_wrap(~Apparatus) + 
+  geom_vline(data = womens_medians, aes(xintercept=med, col="red")) + 
+  labs(title="Distribution of Women's Scores by Apparatus")
+
+ggplot(mens_data, aes(Score)) + 
+  geom_histogram(position="dodge") + facet_wrap(~Apparatus) + 
+  geom_vline(data = mens_medians, aes(xintercept=med, col="red")) + 
+  labs(title="Distribution of Men's Scores by Apparatus")
+```
+
+```{r}
+# difference in scores across rounds
+round_order_womens = c("qual", "final", "TeamFinal", "AAfinal")
+round_order_mens = c("qual", "final", "AAqual", "TeamFinal", "AAfinal", "aa")
+ggplot(womens_data, aes(factor(Round,levels=round_order_womens), Score)) +
+  geom_boxplot() + labs(title = "Women's Scores across Rounds", x="Competition Round")
+ggplot(mens_data, aes(factor(Round,levels=round_order_mens), Score)) +
+  geom_boxplot() + labs(title = "Men's Scores across Rounds", x="Competition Round")
+
+mens_data[which(is.na(mens_data$Score)),]
+```
+
+```{r}
+# data_dem = read.csv("athlete_events.csv")
+# data_dem$Games = ifelse(is.na(data_dem$Games), NA, as.numeric(substr(data_dem$Games, 1, 4)))
+# data_dem = data_dem[which(data_dem$Games>=2000),]
+# data_dem = data_dem %>% filter(str_detect(data_dem$Event, "Gymnastics"))
+# data_dem = data_dem %>% filter(!str_detect(data_dem$Event, "Rhythmic"))
+# head(data_dem)
+# data_dem_m = data_dem[which(data_dem$Sex == 'M'),]
+# data_dem_f = data_dem[which(data_dem$Sex == 'F'),]
+# 
+# 
+# data_dem_m_med = data_dem_m[which(!is.na(data_dem_m$Medal)),]
+# data_dem_f_med = data_dem_f[which(!is.na(data_dem_f$Medal)),]
+# 
+# medal = c("Bronze", "Silver", "Gold")
+```
+
+```{r}
+# par(mfrow=c(1,3))
+# ggplot(data_dem_m_med, aes(factor(Medal, levels=medal), Age)) + geom_violin(color="lightblue", fill="aquamarine4", alpha = .5) +
+#   geom_boxplot(width = .3, alpha = .7) + labs(title = "Men's Medals Conditioned on Age (yrs)", x="Competition Round")
+# ggplot(data_dem_m_med, aes(factor(Medal, levels=medal), Weight)) + geom_violin(color="lightblue", fill="aquamarine4", alpha = .5) +
+#   geom_boxplot(width = .3, alpha = .7) + labs(title = "Men's Medals Conditioned on Weight (kg)", x="Competition Round")
+# ggplot(data_dem_m_med, aes(factor(Medal, levels=medal), Height)) + geom_violin(color="lightblue", fill="aquamarine4", alpha = .5) +
+#   geom_boxplot(width = .3, alpha = .7) + labs(title = "Men's Medals Conditioned on Height (cm)", x="Competition Round")
+```
+
+```{r}
+# par(mfrow=c(1,3))
+# ggplot(data_dem_f_med, aes(factor(Medal, levels=medal), Age)) + geom_violin(color="lightblue", fill="aquamarine4", alpha = .5) +
+#   geom_boxplot(width = .3, alpha = .7) + labs(title = "Women's Medals Conditioned on Age (yrs)", x="Competition Round")
+# ggplot(data_dem_f_med, aes(factor(Medal, levels=medal), Weight)) + geom_violin(color="lightblue", fill="aquamarine4", alpha = .5) +
+#   geom_boxplot(width = .3, alpha = .7) + labs(title = "Women's Medals Conditioned on Weight (kg)", x="Competition Round")
+# ggplot(data_dem_f_med, aes(factor(Medal, levels=medal), Height)) + geom_violin(color="lightblue", fill="aquamarine4", alpha = .5) +
+#   geom_boxplot(width = .3, alpha = .7) + labs(title = "Women's Medals Conditioned on Height (cm)", x="Competition Round")
+```
+
+```{r}
+# data_2020 = read.csv("olympic_medals_more.csv")
+# data_2020 = data_2020[which(data_2020$discipline_title == "Artistic Gymnastics"),]
+# head(data_2020)
+# data_dem
+```
+
+```{r}
+# options(warn=-1)
+# #extra data for 2020 and 2022, moving average for rank over the years across apparatus by women/men (by country)
+# get_dates = function(x) {
+#  if (length(x) == 1) {
+#     parse_date_time(x, orders = c("dmy", "mdy")) %>% 
+#       format("%B %Y")
+#   } else {
+#     max(parse_date_time(x, orders = c("d %b %Y", "%d-%b-%Y", "%b %d %Y", "%b-%d-%Y")), na.rm = TRUE) %>% 
+#       format("%B %Y")
+#   }
+# }
+# 
+# womens_dates = sapply(strsplit(womens_data$Date, " - |-"), get_dates)
+# mens_dates = sapply(strsplit(mens_data$Date, " - |-"), get_dates)
+```
+
+```{r}
+# womens_data$Time = as.Date(paste0("01-", womens_dates), format="%d-%b %Y")
+# womens_scores = womens_data %>% group_by(Apparatus, Time) %>% summarize(med = median(Score, na.rm=T), mean = mean(Score, na.rm=T), country = Country)
+# 
+# mens_data$Time = as.Date(paste0("01-", mens_dates), format="%d-%b %Y")
+# mens_scores = mens_data %>% group_by(Apparatus, Time) %>% summarize(med = median(Score, na.rm=T), mean = mean(Score, na.rm=T), country = Country)
+# 
+# womens_scores
+# mens_scores
+```
+
+```{r}
+# womens_scores %>%
+#   ggplot(aes(Time, med, color = Apparatus)) + 
+#   geom_line() + 
+#   stat_rollapplyr(width = 1.5, align = "center") +
+#   scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") +
+#   labs(x = "Month Year", y = "Median Score",
+#        title = "Rolling Median Score of Apparatus over Time (Women)")
+# 
+# womens_scores %>%
+#   ggplot(aes(Time, mean, color = Apparatus)) + 
+#   geom_line() + 
+#   stat_rollapplyr(width = 1.5, align = "center") +
+#   scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") +
+#   labs(x = "Month Year", y = "Mean Score",
+#        title = "Rolling Avg Score of Apparatus over Time (Women)")
+# 
+# mens_scores %>%
+#   ggplot(aes(Time, med, color = Apparatus)) + 
+#   geom_line() + 
+#   stat_rollapplyr(width = 1.5, align = "center") +
+#   scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") +
+#   labs(x = "Month Year", y = "Median Score",
+#        title = "Rolling Median Score of Apparatus over Time (Men)")
+# 
+# mens_scores %>%
+#   ggplot(aes(Time, mean, color = Apparatus)) + 
+#   geom_line() + 
+#   stat_rollapplyr(width = 1.5, align = "center") +
+#   scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") +
+#   labs(x = "Month Year", y = "Mean Score",
+#        title = "Rolling Avg Score of Apparatus over Time (Men)")
+```
+
+```{r}
+# # now do this just for USA
+# womens_scores_us = womens_scores[which(womens_scores$country=='USA'),]
+# womens_scores_us %>%
+#   ggplot(aes(Time, med, color = Apparatus)) + 
+#   geom_line() + 
+#   stat_rollapplyr(width = 1.5, align = "center") +
+#   scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") +
+#   labs(x = "Month Year", y = "Median Score",
+#        title = "Rolling Median Score of Apparatus over Time (USA Women)")
+# 
+# womens_scores_us %>%
+#   ggplot(aes(Time, mean, color = Apparatus)) + 
+#   geom_line() + 
+#   stat_rollapplyr(width = 1.5, align = "center") +
+#   scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") +
+#   labs(x = "Month Year", y = "Mean Score",
+#        title = "Rolling Avg Score of Apparatus over Time (USA Women)")
+# 
+# mens_scores_us = mens_scores[which(mens_scores$country=='USA'),]
+# mens_scores_us %>%
+#   ggplot(aes(Time, med, color = Apparatus)) + 
+#   geom_line() + 
+#   stat_rollapplyr(width = 1.5, align = "center") +
+#   scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") +
+#   labs(x = "Month Year", y = "Median Score",
+#        title = "Rolling Median Score of Apparatus over Time (USA Men)")
+# 
+# mens_scores_us %>%
+#   ggplot(aes(Time, mean, color = Apparatus)) + 
+#   geom_line() + 
+#   stat_rollapplyr(width = 1.5, align = "center") +
+#   scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") +
+#   labs(x = "Month Year", y = "Mean Score",
+#        title = "Rolling Avg Score of Apparatus over Time (USA Men)")
+# 
+# womens_data
+```
+
+```{r}
+#attempt to merge dfs
+# womens_data <- womens_data %>%
+#   mutate(LastName = tolower(LastName), FirstName = tolower(FirstName))
+# 
+# selected_gymnasts <- data.frame(
+#   LastName = c("biles", "blakely", "chiles", "jones", "roberson"),
+#   FirstName = c("simone", "skye", "jordan", "shilese", "joscelyn")
+# )
+# 
+# # Filter the data for the selected gymnasts
+# filtered_data <- womens_data %>%
+#   filter(LastName %in% selected_gymnasts$LastName & FirstName %in% selected_gymnasts$FirstName)
+# 
+# filtered_data
+# 
+# filtered_data$Name = paste(filtered_data$FirstName, filtered_data$LastName)
+# 
+# womens_scores = filtered_data %>% group_by(Apparatus, Time) %>% summarize(med = median(Score, na.rm=T), mean = mean(Score, na.rm=T), country = Country, name = Name)
+# # group=name for all scores, collapse vaults
+# 
+# womens_scores %>%
+#   ggplot(aes(Time, med, color = name)) + 
+#   geom_line(aes(group=name)) + 
+#   stat_rollapplyr(width = 1, align = "center") +
+#   scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") +
+#   facet_wrap(~Apparatus) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   labs(x = "Month Year", y = "Median Score",
+#        title = "Rolling Median Score of Apparatus over Time (USA Women)")
+```
+
+```{r}
+# male gymnasts
+# womens_data <- womens_data %>%
+#   mutate(LastName = tolower(LastName), FirstName = tolower(FirstName))
+# mens_data <- mens_data %>%
+#   mutate(LastName = tolower(LastName), FirstName = tolower(FirstName))
+# 
+# # Define the selected gymnasts
+# selected_gymnasts <- data.frame(
+#   LastName = c("loos", "hong", "moldauer", "richard", "young"),
+#   FirstName = c("riley", "asher", "yul", "fred", "khoi")
+# )
+# 
+# # Filter the data for the selected gymnasts
+# filtered_data <- mens_data %>%
+#   filter(LastName %in% selected_gymnasts$LastName & FirstName %in% selected_gymnasts$FirstName)
+# 
+# filtered_data$Name = paste(filtered_data$FirstName, filtered_data$LastName)
+# 
+# 
+# mens_scores = filtered_data %>% group_by(Apparatus, Time) %>% summarize(med = median(Score, na.rm=T), mean = mean(Score, na.rm=T), country = Country, name = Name)
+# 
+# mens_scores %>%
+#   ggplot(aes(Time, med, color = name)) + 
+#   geom_line() + 
+#   stat_rollapplyr(width = 1, align = "center") +
+#   scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") +
+#   facet_wrap(~Apparatus) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   labs(x = "Month Year", y = "Median Score",
+#        title = "Rolling Median Score of Apparatus over Time (USA Women)")
+```
+
+
+```{r, fig.width=5, fig.height=3.5}
+# pairs
+womens_data <- womens_data %>%
+  mutate(LastName = tolower(LastName), FirstName = tolower(FirstName))
+mens_data <- mens_data %>%
+  mutate(LastName = tolower(LastName), FirstName = tolower(FirstName))
+
+womens_data$name = paste(womens_data$FirstName, womens_data$LastName)
+mens_data$name = paste(mens_data$FirstName, mens_data$LastName)
+
+womens_avg_score = womens_data %>% filter (name != ' ') %>% filter(Score != 0) %>% group_by(name, Competition, Round, Apparatus) %>% summarize(avg_score = mean(Score, na.rm=T)) %>% ungroup()
+
+womens_med_score = womens_data %>% filter (name != ' ') %>% filter(Score != 0) %>% group_by(name, Competition, Round, Apparatus) %>% summarize(med_score = median(Score, na.rm=T)) %>% ungroup()
+
+womens_avg_score
+womens_med_score
+
+womens_avgs = pivot_wider(data=womens_avg_score, names_from = Apparatus, values_from = avg_score)
+womens_meds = pivot_wider(data=womens_med_score, names_from = Apparatus, values_from = med_score)
+
+womens_avgs = womens_avgs %>% mutate(VT0 = rowMeans(select(., c("VT", "VT1", "VT2")),na.rm=T))
+womens_meds = womens_meds %>% mutate(VT0 = apply(select(., c("VT", "VT1", "VT2")), 1, median, na.rm = T))
+
+womens_avgs
+womens_meds
+
+# ggpairs(womens_avgs %>% select(2:4, ncol(womens_avgs)), 
+#         title="Pairs Plot of Apparatuses by Mean Scores (Women)")
+# ggpairs(womens_meds %>% select(2:4, ncol(womens_meds)), 
+#         title ="Pairs Plot of Apparatuses by Median Scores (Women)")
+
+```
+
+
+```{r, warning=F, fig.width=12, fig.height=10}
+ggpairs(womens_avgs %>% select(3:6, ncol(womens_avgs)), 
+        aes(color = Round, alpha = 0.6),
+        title="Pairs Plot of Apparatuses by Mean Scores (Women)",
+        verbose=F)
+```
+
+```{r, warning=F, fig.width=12, fig.height=10}
+competitions = c("2023 52nd FIG Artistic Gymnastics World Championships", 
+                 # "2022 51st FIG Artistic Gymnastics World Championships", 
+                 "2023 Core Hydration Classic",
+                 "2023 U.S. Championships",
+                 "SANTIAGO 2023 XIX Pan American Games")
+
+womens_avgs_comp = womens_avgs %>% filter(Competition %in% competitions)
+womens_avgs_comp
+ggpairs(womens_avgs_comp %>% select(2:6, ncol(womens_avgs_comp)), 
+        aes(color = Competition, alpha = 0.7),
+        title="Pairs Plot of Apparatuses by Mean Scores (Women)",
+        verbose=F)
+
+# maria tronrud has the most games 
+
+us_women = c("simone biles", "skye blakely", "jordan chiles", "shilese jones", "joscelyn roberson")
+test = womens_avgs %>% filter(name %in% us_women)
+ggpairs(test %>% select(2:6, ncol(test)), 
+        aes(color = Round, alpha = 0.7),
+        title="Pairs Plot of Apparatuses by Mean Scores (Women)",
+        verbose=F)
+
+```
+
+```{r, fig.height=10, fig.width=10}
+womens_scores_round = womens_data %>% filter (name != ' ') %>% filter(Score != 0) %>% group_by(name, Round, Apparatus) %>% summarize(Score = sum(Score, na.rm=T)) %>% ungroup()
+
+womens_scores_round
+
+womens_scores_round = pivot_wider(data=womens_scores_round, names_from = Apparatus, values_from = Score)
+
+womens_scores_round_all = womens_scores_round %>% mutate(VT0 = rowMeans(select(., c("VT", "VT1", "VT2")),na.rm=T))
+
+womens_scores_round_all
+
+test = womens_scores_round_all %>% filter(name %in% us_women)
+
+simone = womens_data %>% filter(name %in% c("simone biles", "jordan chiles", "skye blakely", "shilese jones", "joscelyn roberson", "maria tronrud"))
+simone_scores = simone %>% filter (name != ' ') %>% filter(Score != 0) %>% group_by(name, Apparatus, Round, Competition) %>% summarize(Score = mean(Score, na.rm=T)) %>% ungroup()
+
+simone_scores = pivot_wider(data=simone_scores, names_from = Apparatus, values_from = Score)
+
+simone_scores
+
+simone_scores_all = simone_scores %>% mutate(VT0 = rowMeans(select(., c("VT", "VT1", "VT2")),na.rm=T))
+
+simone_scores_all
+
+library(grid)
+
+suppressWarnings(grid.arrange(ggplot(simone_scores_all, aes(x=BB, y=FX)) + geom_point(aes(col=Round, shape=name)),
+             ggplot(simone_scores_all, aes(x=BB, y=UB)) + geom_point(aes(col=Round, shape=name)),
+             ggplot(simone_scores_all, aes(x=BB, y=VT0)) + geom_point(aes(col=Round,shape=name)),
+             ggplot(simone_scores_all, aes(x=FX, y=UB)) + geom_point(aes(col=Round, shape=name)),
+             ggplot(simone_scores_all, aes(x=FX, y=VT0)) + geom_point(aes(col=Round,shape=name)),
+             ggplot(simone_scores_all, aes(x=UB, y=VT0)) + geom_point(aes(col=Round,shape=name)),
+             ncol=2, top=textGrob("HI")))
+
+# ggpairs(simone_scores_all %>% select(c(2, 4:6, ncol(simone_scores_all))), 
+#         aes(color = Round, alpha = 0.7),
+#         title="Pairs Plot of Apparatuses by Mean Scores (Women)")
+```
+
+```{r, fig.width=16, fig.height=12}
+
+mens_scores_round = mens_data  %>% filter(Score != 0) %>% filter(name != ' ') %>% group_by(name, Apparatus) %>% summarize(Score = mean(Score, na.rm=T)) %>% ungroup()
+
+mens_scores_round = pivot_wider(data=mens_scores_round, names_from = Apparatus, values_from = Score)
+
+mens_scores_round_all = mens_scores_round %>% mutate(VT0 = rowMeans(select(., c("VT", "VT1", "VT2")),na.rm=T))
+
+china_men = mens_scores_round_all %>% filter(name %in% c( "chaopan lin", "yang liu",    "cong shi",    "weide su",    "wei sun",     "hao you"))
+# suppressWarnings(grid.arrange(ggplot(china_men, aes(x=HB, y=PB)) + geom_point(aes(col=Round, shape=name)),
+#              ggplot(china_men, aes(x=HB, y=PH)) + geom_point(aes(col=Round, shape=name)),
+#              ggplot(china_men, aes(x=HB, y=FX)) + geom_point(aes(col=Round,shape=name)),
+#              ggplot(china_men, aes(x=HB, y=SR)) + geom_point(aes(col=Round, shape=name)),
+#              ggplot(china_men, aes(x=HB, y=VT0)) + geom_point(aes(col=Round,shape=name)),
+#              ggplot(china_men, aes(x=PB, y=PH)) + geom_point(aes(col=Round,shape=name)),
+#              ggplot(china_men, aes(x=PB, y=FX)) + geom_point(aes(col=Round,shape=name)),
+#              ggplot(china_men, aes(x=PB, y=SR)) + geom_point(aes(col=Round,shape=name)),
+#              ggplot(china_men, aes(x=PB, y=VT0)) + geom_point(aes(col=Round,shape=name)),
+#              ggplot(china_men, aes(x=PH, y=FX)) + geom_point(aes(col=Round,shape=name)),
+#              ggplot(china_men, aes(x=PH, y=SR)) + geom_point(aes(col=Round,shape=name)),
+#              ggplot(china_men, aes(x=PH, y=VT0)) + geom_point(aes(col=Round,shape=name)),
+#              ggplot(china_men, aes(x=FX, y=SR)) + geom_point(aes(col=Round,shape=name)),
+#              ggplot(china_men, aes(x=FX, y=VT0)) + geom_point(aes(col=Round,shape=name)),
+#              ggplot(china_men, aes(x=SR, y=VT0)) + geom_point(aes(col=Round,shape=name)),
+#              ncol=4))
+china_men
+```
+
+```{r}
+# group people by country for 
+
+test = womens_data %>% dplyr::filter(Date == '30 Sep 2023 - 8 Oct 2023') %>% group_by(Country) %>% dplyr::summarise(n_athletes = n_distinct(name))
+test
+# test[which(test$Country == 'USA'),]
+```
+
+```{r}
+# Select relevant columns for PCA
+athlete_summary_female <- usa_female_gymnasts %>%
+  select(FirstName, LastName, Apparatus, Score, E_Score, D_Score)
+
+# Create a numeric subset for PCA
+numeric_columns_female <- athlete_summary_female %>%
+  select(Score, E_Score, D_Score)
+
+# Remove rows with missing values
+numeric_columns_female <- na.omit(numeric_columns_female)
+
+# Remove non-numeric columns
+numeric_columns_female = subset(numeric_columns_female, select = -c(FirstName, LastName))
+
+# Perform PCA
+pca_result_female <- prcomp(numeric_columns_female, scale = TRUE)
+pc_matrix_female <- pca_result_female$x
+
+# Create a PCA biplot with color-coded points by Apparatus
+fviz_pca_biplot(pca_result_female, label = "var", col.ind = athlete_summary_female$Apparatus)
+```
+
+```{r}
+# ch = tolower(c('Zhuofan Huang', 'Chaopan Lin', 'Yang Liu', 'Yushan Ou', 'Qiyuan Qiu',
+#  'Cong Shi', 'Weide Su', 'Wei Sun', 'Hao You', 'Qingying Zhang', 'Yaqin Zhou'))
+# 
+# unique((womens_data %>% filter(womens_data$Country == 'GBR' & womens_data$Competition=='2023 52nd FIG Artistic Gymnastics World Championships')))
+# 
+# # test %>% group_by(name) %>% summarise(score = mean(Score, na.rm=T))
+# # test %>% group_by(name) %>% summarise(score = median(Score, na.rm=T))
+# 
+# # unique((mens_data %>% filter(mens_data$Country == 'CHN' & mens_data$Competition=='2022 51st FIG Artistic Gymnastics World Championships')))
+# 
+# unique((mens_data[which((mens_data$Country == 'JPN') & mens_data$Round != 'qual'),])) %>% group_by(name, Competition, Round, Apparatus) %>% summarise(Score = Score)
+# unique((womens_data[which(womens_data$Country == 'USA'),]))
+```
+
+
+
+

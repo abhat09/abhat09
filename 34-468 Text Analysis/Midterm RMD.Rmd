@@ -1,0 +1,320 @@
+---
+title: "Midterm Mini Fall 2023"
+author: "Anusha Bhat"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(ggraph)
+library(tidyverse)
+library(quanteda)
+library(ggplot2)
+library(quanteda.textstats)
+library(readtext)
+library(kableExtra)
+library(udpipe)
+library(readr)
+load("../data/multiword_expressions.rda")
+source("../R/dispersion_functions.R")
+source("../R/helper_functions.R")
+source("../R/utility_functions.R")
+source("../R/collocation_functions.R")
+source("../R/keyness_functions.R")
+set.seed(1234)
+library(igraph)
+library(nnet)
+library(ggraph)
+library(nFactors)
+```
+
+
+```{r, include = FALSE}
+intros <- read.csv("/Users/AB/Downloads/midterm_data/midterm_mini_intros.csv")
+intros_corp <- intros %>%
+  mutate(text = quanteda.extras::preprocess_text(text)) %>%
+  corpus()
+```
+
+```{r, include = FALSE}
+students = intros[0:100,]
+gpt = intros[101:200,]
+acad = intros[201:301,]
+
+students_corp = students %>%
+  mutate(text = quanteda.extras::preprocess_text(text)) %>%
+  corpus() %>%
+  tokens(what = "fastestword", remove_numbers = TRUE, remove_punct = TRUE,
+         remove_symbols = TRUE, remove_seperators = TRUE,
+         remove_twitter = TRUE, remove_hyphens = FALSE)
+
+students_corp = tokens_tolower(students_corp)
+
+gpt_corp = gpt %>%
+  mutate(text = quanteda.extras::preprocess_text(text)) %>%
+  corpus() %>%
+  tokens(what = "fastestword", remove_numbers = TRUE, remove_punct = TRUE,
+         remove_symbols = TRUE, remove_seperators = TRUE,
+         remove_twitter = TRUE, remove_hyphens = FALSE)
+
+gpt_corp = tokens_tolower(gpt_corp)
+
+acad_corp = acad %>%
+  mutate(text = quanteda.extras::preprocess_text(text)) %>%
+  corpus() %>%
+  tokens(what = "fastestword", remove_numbers = TRUE, remove_punct = TRUE,
+         remove_symbols = TRUE, remove_seperators = TRUE,
+         remove_twitter = TRUE, remove_hyphens = FALSE)
+
+acad_corp = tokens_tolower(acad_corp)
+```
+
+
+```{r, include = FALSE}
+# keyness
+
+stud_dfm = students_corp %>%
+  tokens_compound(pattern = phrase(multiword_expressions)) %>%
+  dfm()
+
+gpt_dfm = gpt_corp %>%
+  tokens_compound(pattern = phrase(multiword_expressions)) %>%
+  dfm()
+
+acad_dfm = acad_corp %>%
+  tokens_compound(pattern = phrase(multiword_expressions)) %>%
+  dfm()
+
+stud_acad_key = keyness_table(stud_dfm, acad_dfm)
+stud_gpt_key = keyness_table(stud_dfm, gpt_dfm)
+
+knitr::kable(head(stud_acad_key[order(stud_acad_key$LL, decreasing = TRUE),], 10),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 1", notation = "number") %>% 
+  kable_classic()
+
+knitr::kable(head(stud_gpt_key[order(stud_gpt_key$LL, decreasing = TRUE),], 10),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 2", notation = "number") %>% 
+  kable_classic()
+```
+
+ 
+```{r, include = FALSE}
+# frequency of words
+st_freq = textstat_frequency(dfm(students_corp))
+st_freq = mutate(st_freq, RelFreq = (frequency/sum(frequency))*1000000)
+knitr::kable(head(st_freq, 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+
+gpt_freq = textstat_frequency(dfm(gpt_corp))
+gpt_freq = mutate(gpt_freq, RelFreq = (frequency/sum(frequency))*1000000)
+knitr::kable(head(gpt_freq, 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+
+ac_freq = textstat_frequency(dfm(acad_corp))
+ac_freq = mutate(ac_freq, RelFreq = (frequency/sum(frequency))*1000000)
+knitr::kable(head(ac_freq, 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+```
+
+
+```{r, include = FALSE}
+# hedges and boosters from lab 8
+hb_dict1 <- dictionary(file = "/Users/AB/Downloads/hedges_boosters.yml")
+
+intros_toks = intros_corp %>% tokens(include_docvars=T, remove_punct = F, 
+                    remove_numbers = F, remove_symbols = T, what = "word")
+
+hb1 <- intros_toks %>%
+  tokens_lookup(dictionary = hb_dict1, levels = 1) %>%
+  dfm() %>%
+  convert(to = "data.frame") %>% 
+  mutate(
+    tokens_total = ntoken(intros_toks),
+    hedges_norm = (confidencehedged/tokens_total)*100,
+    boosters_norm = (confidencehigh/tokens_total)*100,
+  )
+
+hb_df1 <- hb1 %>% 
+  select(hedges_norm, boosters_norm) %>% 
+  pivot_longer(everything(), names_to = "confidence", values_to = "freq_norm")
+
+lr_df1 <- hb1 %>% 
+  mutate(doc_id = str_remove_all(doc_id, ".txt")) %>% 
+  dplyr::select(doc_id, hedges_norm, boosters_norm) %>% 
+  left_join(select(intros, doc_id, discipline, text), by ="doc_id") %>% 
+  remove_rownames %>% column_to_rownames(var="doc_id")
+
+lr_df1$discipline <- str_replace_all(lr_df1$discipline, "student", "Students")
+lr_df1$discipline <- str_replace_all(lr_df1$discipline, "chatgpt", "ChatGPT")
+lr_df1$discipline <- str_replace_all(lr_df1$discipline, "journal", "STEM")
+
+lr_df1 <- lr_df1 %>%  mutate_if(is.character, as.factor)
+
+mr_fit1 <- multinom(discipline ~ boosters_norm + hedges_norm, data = lr_df1)
+
+ggplot(lr_df1, aes(x = reorder(discipline, boosters_norm, FUN = median), 
+                   y = boosters_norm)) +
+  geom_boxplot(aes(fill = discipline)) +
+  xlab("") +
+  ylab("Boosters (per 100 tokens)") +
+  theme_classic() +
+  coord_flip()
+
+ggplot(lr_df1, aes(x = reorder(discipline, hedges_norm, FUN = median), y = hedges_norm)) +
+  geom_boxplot(aes(fill = discipline)) +
+  xlab("") +
+  ylab("Hedges (per 100 tokens)") +
+  theme_classic() +
+  coord_flip()
+
+hb_new1 <- data.frame(hedges_norm = seq(0, 10, by = .1), boosters_norm = seq(10, 0, by = -.1))
+prob_disc1 <- cbind(hb_new1, predict(mr_fit1, newdata = hb_new1, type = "probs", se = TRUE))
+
+plot_prob1 <- prob_disc1 %>% 
+  pivot_longer(hedges_norm:boosters_norm, names_to = "feature", values_to = "confidence") %>% 
+  pivot_longer(c("Students", "ChatGPT", "STEM"), names_to = "variable", values_to = "probability")
+
+ggplot(plot_prob1, aes(x = confidence, y = probability, color = feature)) + geom_line() + 
+  theme_classic() +
+  facet_grid(variable ~ ., scales = "free") +
+  labs(title = "Predicted probabilities across token frequencies for hedging and boosting facetted by disciplinary category.")
+```
+
+
+```{r, include = FALSE}
+ud_model <- udpipe_load_model("../models/english-ewt-ud-2.5-191206.udpipe")
+ic_an <- data.table::as.data.table(udpipe_annotate(ud_model, x = intros$text,
+                                                 doc_id = intros$doc_id))
+```
+
+```{r echo=FALSE, include = FALSE}
+anno_edit <- ic_an %>%
+  dplyr::select(doc_id, sentence_id, token_id, token, lemma, upos, xpos, head_token_id, dep_rel) %>%
+  rename(pos = upos, tag = xpos)
+
+anno_edit <- structure(anno_edit, class = c("spacyr_parsed", "data.frame"))
+
+sub_tkns <- as.tokens(anno_edit, include_pos = "tag", concatenator = "_")
+
+doc_categories <- names(sub_tkns) %>%
+  data.frame(text_type = .) %>%
+  mutate(text_type = str_extract(text_type, "^[a-z]+"))
+
+docvars(sub_tkns) <- doc_categories
+
+sub_dfm <- sub_tkns %>%
+  tokens_select("^.*[a-zA-Z0-9]+.*_[a-z]", selection = "keep", valuetype = "regex", case_insensitive = T) %>%
+  dfm()
+```
+
+# dimension analysis
+
+```{r echo=FALSE, include = FALSE}
+library(udpipe)
+library(pseudobibeR)
+
+# For demonstration purposes, take the first 10 texts from data from cmu.textstat
+#df <- cmu.textstat::micusp_mini[1:10,]
+
+# Initialize the model
+udpipe_download_model(language = "english")
+ud_model <- udpipe_load_model("english-ewt-ud-2.5-191206.udpipe")
+
+# Parse the data
+intros_prsd <- udpipe_annotate(ud_model, x = intros$text, doc_id = intros$doc_id)
+
+# Convert to a data frame
+intros_prsd <- data.frame(intros_prsd, stringsAsFactors = F)
+
+# Aggregate the tags from dependency structures and parts-of-speech
+df_biber <- biber_udpipe(intros_prsd)
+
+```
+
+```{r, include = FALSE}
+df_biber$doc_id <- gsub("^student.*", "student", df_biber$doc_id)
+df_biber$doc_id <- gsub("^chatgpt.*", "chatgpt", df_biber$doc_id)
+df_biber$doc_id <- gsub("^publish.*", "published", df_biber$doc_id)
+
+source("../R/mda_functions.R")
+screeplot_mda(df_biber)
+
+df_biber <- data.frame(df_biber)
+df_biber$doc_id = as.factor(df_biber$doc_id)
+
+
+inbc_mda <- mda_loadings(df_biber, n_factors = 3)
+
+mda.biber::stickplot_mda(inbc_mda, n_factor = 1)
+```
+
+```{r}
+mda.biber::heatmap_mda(inbc_mda, n_factor = 1) # use this one
+```
+
+```{r, include = FALSE}
+# PCA
+library(cluster)
+library(factoextra)
+
+# subcorpus:
+vec1 = c(sample(0:100, 10, replace = F))
+vec2 = c(sample(101:200, 10, replace = F))
+vec3 = c(sample(201:301, 10, replace = F))
+sub = intros[c(vec1, vec2, vec3),]
+
+
+# Parse the data
+intros_prsd1 <- udpipe_annotate(ud_model, x = sub$text, doc_id = sub$doc_id)
+
+# Convert to a data frame
+intros_prsd1 <- data.frame(intros_prsd1, stringsAsFactors = F)
+
+anno_edit1 <- intros_prsd1 %>%
+  as_tibble() %>%
+  unite("upos", upos:xpos)
+
+sub_tokens1 <- split(anno_edit1$upos, anno_edit1$doc_id)
+
+sub_tokens1 <- as.tokens(sub_tokens1)
+sub_tokens1 <- tokens_remove(sub_tokens1, "^punct_\\S+", valuetype = "regex")
+sub_tokens1 <- tokens_remove(sub_tokens1, "^sym_\\S+", valuetype = "regex")
+sub_tokens1 <- tokens_remove(sub_tokens1, "^x_\\S+", valuetype = "regex")
+
+sub_dfm1 <- sub_tokens1 %>%
+  dfm() %>%
+  dfm_weight(scheme = "prop") %>%
+  convert(to = "data.frame")
+
+sub_dfm1 <- sub_dfm1 %>% column_to_rownames("doc_id") %>% 
+  dplyr::select(order(colnames(.)))
+
+sub_dfm1 <- sub_dfm1 %>% scale() %>% data.frame()
+
+```
+
+```{r, include = FALSE}
+km_pca <- prcomp(sub_dfm1)
+```
+
+
+```{r fig.height=3, fig.width=5, fig.cap="Biplot showing the variables with the 10 highest contributions to principal components 1 and 2."}
+fviz_pca_biplot(km_pca, repel = TRUE,
+                select.var = list(contrib=10),
+                col.var = "blue", # Variables color
+                col.ind = "light pink"  # Individuals color
+)
+
+#https://blog.bioturing.com/2018/06/18/how-to-read-pca-biplots-and-scree-plots/
+```

@@ -1,0 +1,642 @@
+---
+title: "USOPC EDA by Anusha Bhat"
+output: pdf_document
+date: "2023-09-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, messages = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(gridExtra)
+# read in the data files to data frames 
+# 2022-2023 data:
+gym1 = read.csv("C:/Users/AB/Desktop/college/fall 2023/36490/data_2022_2023.csv")
+# 2017-2021 data:
+gym2 = read.csv("C:/Users/AB/Desktop/college/fall 2023/36490/data_2017_2021.csv") 
+
+
+# filter data to women 
+gym1_w = filter(gym1, Gender == 'w')
+gym2_w = filter(gym2, Gender == 'w')
+
+# filter data to men
+gym1_m = filter(gym1, Gender == 'm')
+gym2_m = filter(gym2, Gender == 'm')
+
+# join the data frames 
+gym_w = rbind(gym1_w, gym2_w)
+gym_m = rbind(gym1_m, gym2_m)
+
+# data frames with only USA players 
+USA_w = filter(gym_w, Country == 'USA')
+USA_m = filter(gym_m, Country == 'USA')
+head(USA_w)
+```
+
+```{r}
+players = filter(gym1, Country == "USA" & Gender == "w")
+players = players %>% 
+  group_by(LastName, FirstName)
+players = players[, c("LastName", "FirstName")]
+library(dplyr)
+players = players %>% 
+  group_by(LastName, FirstName) %>%
+  dplyr::summarise()
+```
+
+
+```{r}
+# plot rank vs. score for women
+ggplot(USA_w, aes(y = Rank, x = Score)) +
+  geom_point(aes(color = `Round`)) + 
+  scale_x_sqrt() +
+  scale_y_sqrt() +
+  ggtitle("Rank vs. Score of Female USA Gymnasts") + 
+  geom_smooth()
+
+# plot rank vs. score for women in all countries 
+ggplot(gym_w, aes(y = Rank, x = Score)) +
+  geom_point(aes(color = `Country`)) + 
+  scale_x_sqrt() +
+  scale_y_sqrt() +
+  ggtitle("Rank vs. Score of Female Gymnasts") + 
+  geom_smooth()
+
+# plot rank vs. score for men 
+ggplot(USA_m, aes(y = Rank, x = Score)) +
+  geom_point(aes(color = `Round`)) + 
+  scale_x_sqrt() +
+  scale_y_sqrt() +
+  ggtitle("Rank vs. Score of Male USA Gymnasts") + 
+  geom_smooth()
+
+# plot rank vs. score for men in all countries 
+ggplot(gym_m, aes(y = Rank, x = Score)) +
+  geom_point(aes(color = `Country`)) + 
+  scale_x_sqrt() +
+  scale_y_sqrt() +
+  ggtitle("Rank vs. Score of Male Gymnasts") + 
+  geom_smooth()
+
+# observe that a lower rank may be associated with a lower score 
+```
+
+```{r}
+# lin reg of rank vs. score displaying r squared values
+
+# for men in all countries 
+model1_tot_m = lm(Score ~ Rank, data = gym_m)
+summary(model1_tot_m)$r.squared
+
+# for women in all countries 
+model1_tot_w = lm(Score ~ Rank, data = gym_w)
+summary(model1_tot_w)$r.squared
+
+# for men in USA
+model1_m = lm(Score ~ Rank, data = USA_m)
+summary(model1_m)$r.squared
+
+# for women in USA 
+model1_w = lm(Score ~ Rank, data = USA_w)
+summary(model1_w)$r.squared
+
+
+# observe that the R squared values suggest little to no correlation
+
+```
+
+```{r}
+# source: https://statisticsglobe.com/add-mean-and-median-to-histogram-in-r
+
+# plotting the distribution of ranks for USA Female and Male gymnasts 
+# find the median for women
+median_w = median(USA_w$Rank)
+# plot the histogram with median for women
+ggplot(USA_w, aes(x = Rank)) + 
+  geom_bar(fill = "dark blue") + 
+  annotate("text",
+           x = median_w * 3, 
+           y = median_w * 2,
+           label = paste("Median =", median_w), 
+           color = "green",
+           size = 4) + 
+  geom_vline(xintercept = median_w, color = "green", lwd = 2) + 
+  ggtitle("Distribution of Ranks for USA Female Gymnasts") + 
+  labs(y = "Frequency")
+
+# find the median for men
+median_m = median(USA_m$Rank)
+# plot the histogram with median for men 
+ggplot(USA_m, aes(x = Rank)) + 
+  geom_bar(fill = "dark red") +
+  annotate("text",
+           x = median_m * 3, 
+           y = median_m * 2,
+           label = paste("Median =", median_m), 
+           color = "green",
+           size = 4) + 
+  geom_vline(xintercept = median_m, color = "green", lwd = 2) + 
+  ggtitle("Distribution of Ranks for USA Male Gymnasts") + 
+  labs(y = "Frequency")
+
+# observe that the data is right skewed. Most of the ranks fell between 0-10 for women and 0-20 for the men. The medians are 5 for women and 10 for men.
+```
+
+```{r}
+# plotting execution vs difficulty scores for women and me
+a = ggplot(USA_w, aes(x = E_Score, y = D_Score)) + 
+  geom_point(color = "pink") + 
+  labs(title = "Execution vs. Difficulty Scores: USA Women")
+
+
+b = ggplot(USA_m, aes(x = E_Score, y = D_Score)) + 
+  geom_point(color = "pink") + 
+  labs(title = "Execution vs. Difficulty Scores: USA Men")
+
+c = ggplot(gym_w, aes(x = E_Score, y = D_Score)) + 
+  geom_point(color = "pink") + 
+  labs(title = "Execution vs. Difficulty Scores: All Women")
+
+d = ggplot(gym_m, aes(x = E_Score, y = D_Score)) + 
+  geom_point(color = "pink") + 
+  labs(title = "Execution vs. Difficulty Scores: All Men")
+
+grid.arrange(a, b, c, d, nrow = 2)
+```
+
+```{r}
+# distributions of execution scores 
+a = ggplot(USA_w, aes(x = E_Score)) +
+  geom_histogram(fill = "purple") +
+  labs(title = "Distribution of Execution Scores: USA Women")
+
+b = ggplot(USA_m, aes(x = E_Score)) +
+  geom_histogram(fill = "purple") +
+  labs(title = "Distribution of Execution Scores: USA Men")
+
+c = ggplot(gym_w, aes(x = E_Score)) +
+  geom_histogram(fill = "purple") +
+  labs(title = "Distribution of Execution Scores: All Women")
+
+d = ggplot(gym_m, aes(x = E_Score)) +
+  geom_histogram(fill = "purple") +
+  labs(title = "Distribution of Execution Scores: All men")
+
+grid.arrange(a, b, c, d, nrow = 2)
+```
+
+```{r}
+# distribution of difficulty scores 
+a = ggplot(USA_w, aes(x = D_Score)) +
+  geom_histogram(fill = "purple") +
+  labs(title = "Distribution of Difficulty Scores: USA Women")
+
+b = ggplot(USA_m, aes(x = D_Score)) +
+  geom_histogram(fill = "purple") +
+  labs(title = "Distribution of Difficulty Scores: USA Men")
+
+c = ggplot(gym_w, aes(x = D_Score)) +
+  geom_histogram(fill = "purple") +
+  labs(title = "Distribution of Difficulty Scores: All Women")
+
+d = ggplot(gym_m, aes(x = D_Score)) +
+  geom_histogram(fill = "purple") +
+  labs(title = "Distribution of Difficulty Scores: All men")
+
+grid.arrange(a, b, c, d, nrow = 2)
+```
+```{r}
+# plotting execution score vs. overall score
+a = ggplot(USA_w, aes(x = E_Score, y = Score)) + 
+  geom_point(color = "blue") + 
+  labs(title = "Execution vs. Overall Scores: USA Women")
+
+b = ggplot(USA_m, aes(x = E_Score, y = Score)) + 
+  geom_point(color = "blue") + 
+  labs(title = "Execution vs. Overall Scores: USA Men")
+
+c = ggplot(gym_w, aes(x = E_Score, y = Score)) + 
+  geom_point(color = "blue") + 
+  labs(title = "Execution vs. Overall Scores: All Women")
+
+d = ggplot(gym_m, aes(x = E_Score, y = Score)) + 
+  geom_point(color = "blue") + 
+  labs(title = "Execution vs. Overall Scores: All Men")
+
+grid.arrange(a, b, c, d, nrow = 2)
+```
+
+```{r}
+# plotting difficulty score vs. overall score
+a = ggplot(USA_w, aes(x = D_Score, y = Score)) + 
+  geom_point(color = "blue") + 
+  labs(title = "Difficulty vs. Overall Scores: USA Women")
+
+b = ggplot(USA_m, aes(x = D_Score, y = Score)) + 
+  geom_point(color = "blue") + 
+  labs(title = "Difficulty vs. Overall Scores: USA Men")
+
+c = ggplot(gym_w, aes(x = D_Score, y = Score)) + 
+  geom_point(color = "blue") + 
+  labs(title = "Difficulty vs. Overall Scores: All Women")
+
+d = ggplot(gym_m, aes(x = D_Score, y = Score)) + 
+  geom_point(color = "blue") + 
+  labs(title = "Difficulty vs. Overall Scores: All Men")
+
+grid.arrange(a, b, c, d, nrow = 2)
+```
+
+```{r}
+# Difficulty score vs. rank
+a = ggplot(USA_w, aes(x = D_Score, y = Rank)) + 
+  geom_point(color = "brown") + 
+  labs(title = "Difficulty vs. Rank: USA Women")
+
+b = ggplot(USA_m, aes(x = D_Score, y = Rank)) + 
+  geom_point(color = "brown") + 
+  labs(title = "Difficulty vs. Rank: USA Men")
+
+c = ggplot(gym_w, aes(x = D_Score, y = Rank)) + 
+  geom_point(color = "brown") + 
+  labs(title = "Difficulty vs. Rank: All Women")
+
+d = ggplot(gym_m, aes(x = D_Score, y = Rank)) + 
+  geom_point(color = "brown") + 
+  labs(title = "Difficulty vs. Rank: All Men")
+
+grid.arrange(a, b, c, d, nrow = 2)
+```
+
+```{r}
+# Execution score vs. rank
+a = ggplot(USA_w, aes(x = E_Score, y = Rank)) + 
+  geom_point(color = "brown") + 
+  labs(title = "Execution vs. Rank: USA Women")
+
+b = ggplot(USA_m, aes(x = E_Score, y = Rank)) + 
+  geom_point(color = "brown") + 
+  labs(title = "Execution vs. Rank: USA Men")
+
+c = ggplot(gym_w, aes(x = E_Score, y = Rank)) + 
+  geom_point(color = "brown") + 
+  labs(title = "Execution vs. Rank: All Women")
+
+
+d = ggplot(gym_m, aes(x = E_Score, y = Rank)) + 
+  geom_point(color = "brown") + 
+  labs(title = "Execution vs. Rank: All Men")
+
+grid.arrange(a, b, c, d, nrow = 2)
+```
+```{r}
+# plotting frequency of penalties 
+a = ggplot(USA_w, aes(x = Penalty)) + 
+  geom_histogram(fill = "orange") +
+  labs(title = "Distribution of Penalties for USA Women")
+
+b = ggplot(USA_m, aes(x = Penalty)) + 
+  geom_histogram(fill = "orange") +
+  labs(title = "Distribution of Penalties for USA Men")
+
+grid.arrange(a, b, nrow = 1)
+
+# penalty counts in a data frame
+data.frame(Penalty_USA_W = sum(table(USA_w$Penalty)), 
+          Penalty_USA_M = sum(table(USA_m$Penalty)), 
+          Penalty_All_W = sum(table(gym_w$Penalty)), 
+          Penalty_All_M = sum(table(gym_m$Penalty))) 
+```
+
+```{r}
+# Difficulty vs Penalty 
+a = ggplot(USA_w, aes(x = D_Score, y = Penalty)) + 
+  geom_point(color = "red") + 
+  labs(title = "Difficulty vs. Penalty: USA Women")
+
+b = ggplot(USA_m, aes(x = D_Score, y = Penalty)) + 
+  geom_point(color = "red") + 
+  labs(title = "Difficulty vs. Penalty: USA Men")
+
+c = ggplot(gym_w, aes(x = D_Score, y = Penalty)) + 
+  geom_point(color = "red") + 
+  labs(title = "Difficulty vs. Penalty: All Women")
+
+d = ggplot(gym_m, aes(x = D_Score, y = Penalty)) + 
+  geom_point(color = "red") + 
+  labs(title = "Difficulty vs. Penalty: All Men")
+
+grid.arrange(a, b, c, d, nrow = 2)
+```
+
+```{r}
+# Execution vs Penalty 
+a = ggplot(USA_w, aes(x = E_Score, y = Penalty)) + 
+  geom_point(color = "red") + 
+  labs(title = "Execution vs. Penalty: USA Women")
+
+b = ggplot(USA_m, aes(x = E_Score, y = Penalty)) + 
+  geom_point(color = "red") + 
+  labs(title = "Execution vs. Penalty: USA Men")
+
+c = ggplot(gym_w, aes(x = E_Score, y = Penalty)) + 
+  geom_point(color = "red") + 
+  labs(title = "Execution vs. Penalty: All Women")
+
+d = ggplot(gym_m, aes(x = E_Score, y = Penalty)) + 
+  geom_point(color = "red") + 
+  labs(title = "Execution vs. Penalty: All Men")
+
+grid.arrange(a, b, c, d, nrow = 2)
+```
+
+
+```{r}
+# import summer olympics data 
+summer <- read.csv("summer.csv")
+summer_recent = summer %>%
+          filter(., Sport == "Gymnastics") %>%
+          filter(., Year >= 2000)
+
+summer_men = filter(summer_recent, Gender == "Men")
+summer_women = filter(summer_recent, Gender == "Women")
+
+
+summer_US_men = filter(summer_men, Country == "USA")
+summer_US_women = filter(summer_women, Country == "USA")
+  
+```
+
+```{r}
+# distribution of medals for US 
+a = ggplot(summer_US_women, aes(x = Medal)) +
+  geom_bar(fill = "green") +
+  labs(title = "counts of medals for US female gymnasts in the summer olympics")
+b = ggplot(summer_US_men, aes(x = Medal)) +
+  geom_bar(fill = "green") +
+  labs(title = "counts of medals for US male gymnasts in the summer olympics")
+
+grid.arrange(a, b, nrow = 1)
+```
+
+```{r}
+# looking at total medal counts by event
+a = ggplot(filter(summer_US_women), aes(x = Event)) + 
+  geom_bar(fill = "orange") +
+  coord_flip() + 
+  labs(title = "Medal Counts for Each Event: US Women")
+
+b = ggplot(filter(summer_US_men), aes(x = Event)) + 
+  geom_bar(fill = "orange") +
+  coord_flip() + 
+  labs(title = "Medal Counts for Each Event: US Men")
+grid.arrange(a, b, nrow = 2)
+```
+
+```{r}
+# looking at medal type distributions by event 
+a = ggplot(filter(summer_US_women), aes(x = Medal)) + 
+  geom_bar(fill = "red") +
+  facet_grid(~Event, margin = FALSE) + 
+  labs(title = "Distribution of Medals for Each Event: US Women")
+
+b = ggplot(filter(summer_US_men), aes(x = Medal)) + 
+  geom_bar(fill = "red") +
+  facet_grid(~Event, margin = FALSE) + 
+  labs(title = "Distribution of Medals for Each Event: US Men")
+
+grid.arrange(a, b, nrow = 2)
+```
+
+```{r}
+# significance testing for medals 
+
+chisq.test(summer_recent$Gender, summer_recent$Medal)
+
+medals_tab_w_all = table(summer_women$Medal)
+chisq.test(medals_tab_w_all)
+medals_tab_w_all
+
+medals_tab_w = table(summer_US_women$Medal)
+chisq.test(medals_tab_w)
+medals_tab_w
+
+medals_tab_m_all = table(summer_men$Medal)
+chisq.test(medals_tab_m_all)
+medals_tab_m_all
+
+medals_tab_m = table(summer_US_men$Medal)
+chisq.test(medals_tab_m)
+medals_tab_m
+```
+
+```{r}
+events_tab_w_all = table(summer_women$Event)
+chisq.test(events_tab_w_all)
+events_tab_w_all
+
+events_tab_w = table(summer_US_women$Event)
+chisq.test(events_tab_w)
+events_tab_w
+
+events_tab_m_all = table(summer_men$Event)
+chisq.test(events_tab_m_all)
+events_tab_m_all
+
+events_tab_m = table(summer_US_men$Event)
+chisq.test(events_tab_m)
+events_tab_m
+```
+```{r}
+penalties2017_tab = table(gym1$Penalty)[-1]
+chisq.test(penalties2017_tab)
+penalties2017_tab
+
+penalties2022_tab = table(gym2$Penalty)[-1]
+chisq.test(penalties2022_tab)
+penalties2022_tab
+
+USA_all = filter(gym1, Country == "USA" & Penalty > 0)
+USA_all = table(USA_all$Gender, USA_all$Penalty)
+chisq.test(USA_all)
+USA_all
+```
+```{r}
+a = ggplot(USA_w, aes(x = E_Score, y = D_Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = E_Score, y = D_Score, color = LastName)) + 
+  xlim(min = 6, max = 10) + 
+  ylim(min = 3, max = 7) +
+  ggtitle("E_score vs. D_score")
+
+USA_filter = USA_w %>% 
+  filter(LastName %in% c("BILES", "CAREY", "JONES", "LEE", "CHILES"))
+b = ggplot(USA_filter, 
+       aes(x = E_Score, y = D_Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = E_Score, y = D_Score, color = LastName)) + 
+  xlim(min = 6, max = 10) + 
+  ylim(min = 3, max = 7) +
+  ggtitle("E_score vs. D_score")
+
+grid.arrange(a, b, nrow = 1)
+```
+
+
+```{r}
+ggplot(USA_filter, aes(x = E_Score, y = D_Score)) +
+  geom_point(aes(color = Apparatus)) +
+  geom_line(aes(x = E_Score, y = D_Score, color = Apparatus)) + 
+  xlim(min = 6, max = 10) + 
+  ylim(min = 4.5, max = 7) +
+  ggtitle("E_score vs. D_score") +
+  facet_grid(~LastName)
+
+a = ggplot(USA_filter, aes(x = Rank)) +
+  geom_bar(aes(fill = LastName), position = "dodge") +
+  xlim(min = 0, max = 20)
+
+b = ggplot(USA_filter, aes(x = Rank)) +
+  geom_bar(aes(fill = LastName)) +
+  xlim(min = 0, max = 20)
+
+grid.arrange(a, b, nrow = 1)
+
+c = ggplot(USA_filter, aes(x = Rank, y = Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = Rank, y = Score, color = LastName)) + 
+  ggtitle("Score vs. Rank for each athlete")
+
+d = ggplot(USA_filter, aes(x = Rank, y = Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = Rank, y = Score, color = LastName)) + 
+  xlim(min = 0, max = 30) +
+  ggtitle("Score vs. Rank for each athlete")
+
+e = ggplot(USA_w, aes(x = Rank, y = Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = Rank, y = Score, color = LastName)) + 
+  ggtitle("Score vs. Rank for each athlete")
+
+f = ggplot(USA_w, aes(x = Rank, y = Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = Rank, y = Score, color = LastName)) + 
+  xlim(min = 0, max = 30) +
+  ylim(min = 10, max = 16) +
+  ggtitle("Score vs. Rank for each athlete")
+
+grid.arrange(c, d, nrow = 1)
+grid.arrange(e, f, nrow = 1)
+```
+
+```{r}
+a = ggplot(USA_m, aes(x = E_Score, y = D_Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = E_Score, y = D_Score, color = LastName)) + 
+  xlim(min = 5, max = 10) + 
+  ylim(min = 4, max = 7) +
+  ggtitle("E_score vs. D_score")
+
+USA_filter2 = USA_m %>% 
+  filter(LastName %in% c("MALONE", "MOLDAUER", "PHILLIPS", "SKIRKEY", "WHITTENBURG"))
+
+b = ggplot(USA_filter2, 
+       aes(x = E_Score, y = D_Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = E_Score, y = D_Score, color = LastName)) + 
+  xlim(min = 6.5, max = 10) + 
+  ylim(min = 4.75, max = 7) +
+  ggtitle("E_score vs. D_score")
+
+grid.arrange(a, b, nrow = 1)
+```
+
+```{r}
+ggplot(USA_filter2, aes(x = E_Score, y = D_Score)) +
+  geom_point(aes(color = Apparatus)) +
+  geom_line(aes(x = E_Score, y = D_Score, color = Apparatus)) + 
+  xlim(min = 6, max = 10) + 
+  ylim(min = 5, max = 7) +
+  ggtitle("E_score vs. D_score") +
+  facet_grid(~LastName)
+
+a = ggplot(USA_filter2, aes(x = Rank)) +
+  geom_bar(aes(fill = LastName), position = "dodge") +
+  xlim(min = 0, max = 20)
+
+b = ggplot(USA_filter2, aes(x = Rank)) +
+  geom_bar(aes(fill = LastName)) +
+  xlim(min = 0, max = 20)
+
+grid.arrange(a, b, nrow = 1)
+
+c = ggplot(USA_filter2, aes(x = Rank, y = Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = Rank, y = Score, color = LastName)) + 
+  ggtitle("Score vs. Rank for each athlete")
+
+d = ggplot(USA_m, aes(x = Rank, y = Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = Rank, y = Score, color = LastName)) + 
+  ggtitle("Score vs. Rank for each athlete")
+
+e = ggplot(USA_filter2, aes(x = Rank, y = Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = Rank, y = Score, color = LastName)) + 
+  xlim(min = 0, max = 30) +
+  ylim(min = 10, max = 16) +
+  ggtitle("Score vs. Rank for each athlete")
+
+f = ggplot(USA_m, aes(x = Rank, y = Score)) +
+  geom_point(aes(color = LastName)) +
+  geom_line(aes(x = Rank, y = Score, color = LastName)) + 
+  xlim(min = 0, max = 30) +  
+  ylim(min = 10, max = 16) +
+  ggtitle("Score vs. Rank for each athlete")
+
+grid.arrange(c, e, nrow = 1)
+grid.arrange(d, f, nrow = 1)
+```
+
+```{r}
+gym = rbind(gym1, gym2) 
+gym$LastName = tolower(gym$LastName)
+gym$FirstName = tolower(gym$FirstName)
+gym$Name = tolower(paste(gym$FirstName, gym$LastName, sep = " "))
+
+```
+
+```{r}
+# note that this does not take into account the event type or competition 
+
+sim_avgs = function(athlete)
+{
+  gym$Name = tolower(paste(gym$FirstName, gym$LastName, sep = " "))
+  if ((athlete %in% gym$Name) == F)
+  {
+    res = data.frame("Score" = 0, "D_Score" = 0, "E_score" = 0, 
+              "Rank" = 0, "Penalty" = 0)
+    return (res)
+  }
+  data = filter(gym, Name == athlete)
+  score = mean(data$Score)
+  d_score = mean(data$D_Score)
+  e_score = mean(data$E_Score)
+  rank = mean(data$Rank)
+  penalty = mean(data$Penalty)
+  res = data.frame("Score" = score, "D_Score" = d_score, "E_score" = e_score, 
+              "Rank" = rank, "Penalty" = penalty)
+  return (res)
+}
+
+
+sim_avgs("simone biles")
+sim_avgs("sunisa lee")
+sim_avgs("lee")
+```
