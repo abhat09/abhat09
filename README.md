@@ -1,6 +1,6 @@
 # Hi, I'm Anusha! 👋
 
-🎓 **M.S. in Applied Data Science student** at the University of Chicago  
+🎓 **M.S. in Applied Data Science student** at the University of Chicago (expected graduation Dec. 2025)
 🎓 **B.S. in Statistics & Machine Learning** with a **minor in Biological Sciences** from Carnegie Mellon University (Class of 2024)
 
 ---
