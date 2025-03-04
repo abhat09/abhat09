@@ -14,7 +14,7 @@ When I’m not coding, I enjoy going on long walks, relaxing with rom coms and c
 ---
 
 🔍 **What I’m Looking For:**  
-I’m actively exploring **Summer 2025 internship** opportunities for data science roles where I can apply my skills and gain hands-on experience in solving real-world problems with data. 🚀
+I’m actively exploring Summer 2025 internship opportunities in data science to apply my skills and gain hands-on experience solving real-world problems with data. In the Summer of 2024, I interned as a Software Engineer at Material Bank, where I helped develop a graph-based database to provide insights into customer and project preferences for the business and marketing teams. I’m eager to further my skills in data science and apply them to solve business problems through a subsequent internship this summer! 🚀
 
 ---
 
