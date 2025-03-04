@@ -1,0 +1,453 @@
+---
+title: "36-401 Data Exam 2: Invesigation Civil War Outbreaks"
+author: "Anusha Bhat"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    latex_engine: xelatex
+linestretch: 1.241
+fontsize: 10pt
+---
+
+```{r setup, include=FALSE, warnings = F}
+knitr::opts_chunk$set(echo = F, messages = F, warnings = F)
+library(readr)
+library(mgcv)
+library(knitr)
+ch <- read_csv("C:/Users/AB/Desktop/college/spring 2024/36402/ch.csv")
+```
+
+# 1 Introduction
+
+# 1.1 Identifying the Problem
+
+In this report, we aim to investigate the factors that influence the outbreak of civil wars within nations. Understanding these influences can help us with our understanding of current and past human history, as well as, elucidating potential areas of society that we can target to potentially prevent future outbreaks of civil wars. We will investigate two theories in particular thar hypothesize what vulnerabilities facilitate outbreaks of civil wars within a country. The first theory suggests that for countries that are heavily dependent on commodity exports to sustain their economy, rebels can seize, and sell some of these commodities, allowing for civil wars to become easier to start and maintain in these countries. The second theory suggests that civil wars are more likely to form in countries which have one ethnic group dominating the politics and economy, along with strong ethnic divisions within the society. We will specifically implement a model using quantitative data to evaluate these two claims.
+
+# 1.2 Elementary Data Analysis
+
+Our data file was provided by Professor Cosma Shalizi who gathered this data from a study conducted by another professor regarding the causes of civil wars. The variables in the data set are given country name, year the data was collected (over a five year period), an indicator of whether a civil war began during that period, or was ongoing, or if there was peace, exports reflecting a country’s dependency on commodity exports, male secondary school enrollment rate, growth rate for the gross domestic product (GDP), an index of geographic concentration of the country’s population, how many months it has been since the country’s last war or the end of world war 2 based on which one was more recent, natural logarithm of the population, an index of the country’s divide along ethnic lines, and an index of ethnic dominance. Essentially, one row highlights for a particular country, whether there was outbreak of war, an ongoing war, or peace in that time period, as well as other social and economic metrics.
+
+We note that there are 600 rows containing NAs in our data set, out of a total of 1,288 rows. In particular, NA can indicate that a civil war was ongoing for the third variable mentioned or it can indicate there is missing data for the other metrics. We also note that there are some percentages over 100% for male secondary school enrollment rate, though, there is no answer as to why this is. The variables of importance to us are indication of civil war outbreak, exports, male secondary school enrollment rate, GDP, population, fractionalizaton, peace, concentration and ethnic dominance. In figure 1, we display the distributions of some of these variables. We note that some of the distributions are skewed and non-normal, indicating that we may need to perform a possible log transformation for these variables in our model.
+
+```{r}
+par(mfrow=c(3,3))
+hist(ch$lnpop, xlab = "Natural Log of Population", main = "Distribution of Population",
+     col = "light blue")
+hist(ch$concentration, xlab = "Concentration", main = "Distribution of Concentration",
+     col = "light blue")
+hist(ch$schooling, xlab = "Male School Enrollment Rate",
+     main = "Distribution of School Enrollment", col = "light blue")
+hist(ch$exports, xlab = "Exports", main = "Distribution of Exports",
+     col = "light blue")
+hist(ch$peace, xlab = "Peace (months)", main = "Distirbution of Peace",
+     col = "light blue")
+hist(ch$growth, xlab = "Annual GDP Growth Rate", main = "Distribution of GDP",
+     col = "light blue")
+hist(ch$fractionalization, xlab = "Fractionalization of Ethnic Groups",
+     main = "Fractionalization Distribution", col = "light blue")
+```
+
+Additionally, we see that approximately 9.39% of the data had an ongoing civil war during the time period observed, approximately 6.06% of the data had no civil war outbreak during the period, and approximately 84.55% of the data had a civil war outbreak within the five year period.
+
+# 2. Model
+
+# 2.1 Model Selection
+
+Since we are not particularly investigating the linear associations between these variables and civil war outbreak, we decided to forgo using linear regression as our model. Due to the use of several predictor variables, a generalized additive model will be useful to us. In the model, the response variable "start" of civil war is categorical, so we set the family as binomial in our model. Due to the binomial family, our model will thus predict the log offs of success as well as the probability of success. Additionally, since the model is additive, we can observe the different contributions of each predictor variable to the response through the partial response functions. For the model, we can write the formula as 
+\[ g(\mu(x)) = \alpha + \sum_{j = 1}^{\alpha}{f_j(x_j)}\]
+
+where each $f_j$ is a smooth function of the predictor $x_j$. We note that these smooth functions may possibly be linear, but not necessarily. 
+
+When determining what predictor variables to use, we began with a model including all variables and eliminated one variable at a time. If the cross-validated mean squared error (MSE) decreased after removing the variable, then that variable was omitted from our model. We note that all cross-validated mean squared errors reported in this analysis is produced using 5 folds. Below is the construction of the model. We note that code used for this report was sourced from the sample student paper provided by Dr. Shalizi and from the 36-402 course notes.
+
+
+```{r}
+ch.fin = gam(start ~ s(log(exports)) + 
+                s(growth) + 
+                s(lnpop) +
+               dominance  + 
+               s(peace), data = ch,  family="binomial",
+             na.action=na.exclude)
+```
+
+
+This final combination of the predictor variables selected to construct our model shown above, resulted in the lowest cross validated MSE of approximately 0.0588. Furthermore, the cross validated MSE without the log transformation of exports was approximately 0.0602. Thus, we decided to include the log transformation as it improved the model’s predictive accuracy. We note that peace has a non-normal distribution which could cause bias in our model's prediction. However, a log transformation resulted in a right skewed distribution (shown in figure 2), so we omitted this transformation from our model. 
+
+```{r, fig.height= 3}
+par(mfrow=c(1,1))
+hist(log(ch$peace), col = "light blue",
+     xlab = "Log of Peace", main = "Distribution of Log of Peace" )
+```
+
+
+# 2.2 Model Analysis
+
+In our final model, we have one parametric model, dominance, since it is binary, and four nonparametric variables, peace, exports, male school enrollment rate, and GDP growth. A confidence interval, along with a point estimate, for dominance is included in table 1. 
+
+
+```{r}
+
+resample <- function(x) { sample(x,size=length(x),replace=TRUE) }
+resample.data.frame <- function(data) { data[resample(1:nrow(data)),] }
+
+
+gam.estimator <- function(data, form=formula(ch.fin)) {
+    return(gam(formula=form,data=data,family="binomial"))
+}
+
+param.extractor <- function(mdl) {
+    return(summary(mdl)$p.coef)
+}
+
+smooth.extractor <- function(mdl,var,grids) {
+      predict(mdl,newdata=grids[[var]],type="terms")[,var]
+}
+
+sum.smooth.extractor <- function(mdl, terms, grid) {
+    all.terms <- predict(mdl, newdata=grid, type="terms")
+    our.terms <- all.terms[,terms]
+    return(rowSums(our.terms))
+}
+```
+
+```{r}
+ch.na = na.omit(ch)
+# Create a short list of grids for plotting
+exp.grid <-  data.frame(exports = seq(from = min(ch.na$exports),
+                             to = max(ch.na$exports), length.out = 200),
+                        dominance = median(ch.na$dominance), growth = median(ch.na$growth), 
+                        peace = median(ch.na$peace), lnpop = median(ch.na$lnpop)) 
+
+growth.grid <- data.frame(growth = seq(from = min(ch.na$growth),
+                             to = max(ch.na$growth), length.out = 200),
+                        dominance = median(ch.na$dominance), exports = median(ch.na$exports), 
+                        peace = median(ch.na$peace), lnpop = median(ch.na$lnpop)) 
+
+pop.grid <- data.frame(lnpop = seq(from = min(ch.na$lnpop),
+                             to = max(ch.na$lnpop), length.out = 200),
+                        dominance = median(ch.na$dominance), growth = median(ch.na$growth), 
+                        peace = median(ch.na$peace), exports = median(ch.na$exports))
+
+peace.grid <- data.frame(peace = seq(from = min(ch.na$peace),
+                             to = max(ch.na$peace), length.out = 200),
+                        dominance = median(ch.na$dominance), growth = median(ch.na$growth), 
+                        exports = median(ch.na$exports), lnpop = median(ch.na$lnpop))
+
+grids <- list(exp.grid, growth.grid, pop.grid, peace.grid)
+names(grids) <- c("s(log(exports))","s(growth)","s(lnpop)",
+                  "s(peace)")
+
+
+```
+
+
+```{r}
+bootstrap.cis <- function(rboot.mdls, extractor, main.mdl, level, ...) {
+    alpha=1-level
+    rboot.extracts <- sapply(rboot.mdls, extractor, ...)
+    main.extract <- extractor(main.mdl, ...)
+    lo.quantiles <- apply(rboot.extracts,1,quantile,probs=alpha/2)
+    hi.quantiles <- apply(rboot.extracts,1,quantile,probs=1-alpha/2)
+    lo.fluctuations <- main.extract - lo.quantiles
+    hi.fluctuations <- main.extract - hi.quantiles
+    hi.limits <- main.extract + lo.fluctuations
+    lo.limits <- main.extract + hi.fluctuations
+    return(data.frame(lo=lo.limits,est=main.extract,hi=hi.limits))
+}
+```
+
+```{r, cache = T}
+boot.gams <- replicate(200, gam.estimator(resample.data.frame(ch)),
+                       simplify=FALSE)
+```
+
+
+```{r, cache = T}
+parametric.term.CIs <- bootstrap.cis(rboot.mdls=boot.gams,
+                                     extractor=param.extractor,
+                                     main.mdl=ch.fin,
+                                     level=0.95)
+exports.confband <- bootstrap.cis(rboot.mdls=boot.gams,
+                               extractor=smooth.extractor,
+                               main.mdl=ch.fin,
+                               level=0.95,
+                               var="s(log(exports))",
+                               grids=grids)
+growth.confband <- bootstrap.cis(rboot.mdls=boot.gams,
+                                   extractor=smooth.extractor,
+                                   main.mdl=ch.fin,
+                                   level=0.95,
+                                   var="s(growth)",
+                                   grids=grids)
+peace.confband <- bootstrap.cis(rboot.mdls=boot.gams,
+                                    extractor=smooth.extractor,
+                                    main.mdl=ch.fin,
+                                    level=0.95,
+                                    var="s(peace)",
+                                    grids=grids)
+pop.confband <- bootstrap.cis(rboot.mdls=boot.gams,
+                               extractor=smooth.extractor,
+                               main.mdl=ch.fin,
+                               level=0.95,
+                               var="s(lnpop)",
+                               grids=grids)
+
+```
+
+```{r}
+plot.confband <- function(confband, var, term=paste("s(",var,")",sep=""),
+                          grid.list=grids, data=ch, ...) {
+    x <- grid.list[[term]][,var]
+    plot(x,y=confband$est, xlab=var, ylim=c(min(confband),max(confband)),
+         type="l",ylab=term,...)
+    lines(x,y=confband$lo, lty="dashed", col = "red")
+    lines(x,y=confband$hi, lty="dashed", col = "red")
+    #rug(data[,var],side=1)
+    invisible(NULL)
+}
+```
+
+```{r}
+plot.confband.exp <- function(confband, var, term=paste("s(",var,")",sep=""),
+                          grid.list=grids, data=ch, ...) {
+    x <- grid.list[[term]][,"exports"]
+    plot(x,y=confband$est, xlab=var, ylim=c(min(confband),max(confband)),
+         type="l",ylab=term,...)
+    lines(x,y=confband$lo, lty="dashed", col = "red")
+    lines(x,y=confband$hi, lty="dashed", col = "red")
+    #rug(data[,var],side=1)
+    invisible(NULL)
+}
+```
+
+```{r}
+p.coefs <- summary(ch.fin)$p.coef
+kable(parametric.term.CIs,digits=2)
+```
+
+The confidence intervals were constructed using bootstrapping for resampling cases. We chose to use bootstrapping with resampling cases since our response variable is categorical and we do not want to rely on the correctness of the model in our simulation.
+
+The coefficient for dominance is positive, indicating that the odds of a civil war breaking out is approximately 1.27 more likely if the country has one ethnic group dominating the government and economy compared to a country that does not have a dominating ethnic group. We note that the 95% confidence interval for this point estimate covers 0.
+
+The partial response functions are displayed in figure 3, along with their confidence intervals in figure 4 determined from the same bootstrapping method mentioned previously.
+
+```{r}
+plot(ch.fin,se=FALSE, page = 1) 
+```
+The partial response to the log of exports increase as the log of exports increases. The response function increases from a low level of odds to a high level of odds as the log of exports increases. Since the log of exports increases as exports increases, we observe that civil wars are more likely to start when there are more commodity exports. 
+
+The partial response to the growth of GDP decreases as the growth rate decreases. The response function decreases from a high level of odds to a low level of adds as the growth rate increases. This suggests that civil wars might be less likely to start if the growth rate of the GDP is lower. This is an interesting result in contrast to the exports, as one could suspect that an increase in exports is in tandem with an in crease in growth. Further analysis into this topic could yield interesting results.
+
+The partial response to the log of the population increases from low odds to high odds as the log of the population increases. This suggests that civil wars are more likely to start if there are more people in the country. 
+
+The partial response to pease decreases, beginning at high odds and decreases to low odds as peace increases. This suggests that civil wars are less likely to start as the duration of time since the country's last war or World War 2 (depending on which event was more recent) occurred increases. This makes sense as people may be more hesitant to disrupt the peace the longer there is no war, and/or the society may be working towards preventing civil wars to sustain peace. This could also be an interesting area for further research.
+
+
+
+
+```{r}
+par(mfrow=c(2,2))
+plot.confband.exp(exports.confband, var="log(exports)")
+plot.confband(growth.confband,var="growth")
+plot.confband(pop.confband,var="lnpop")
+plot.confband(peace.confband,var="peace")
+```
+
+
+The confidence intervals for the partial response functions for log of the population and growth seem to be similar but opposite--the interval starts out wide then narrows around the function for population, whereas, the interval starts narrow then widens for growth. We observe wide bands for the log of exports and peace, although the bans widen and narrow and are more wiggly for peace. We also observe that all of the confidence bands for each of the partial response functions include 0 in the entirety of the intervals. Despite this, we can not conclude whether or not the predictors should be removed from the model without further analysis. Additionally, we can not conclude whether any particular predictor is significant since all of the intervals overlap zero (whereas we could determine significance if the interval did not include 0).
+
+
+
+
+# 2.3 Model Diagnostics
+
+In this section we will check the goodness of fit of our model to determine validity of the analysis from section 2.2.
+
+# 2.3.1 Prediction Classification
+
+First, we will check whether the model can predict the outcome accurately. The in-sample error of our model is approximately 0.0623, while, the in-sample error of a basic model which predicts the majority class everytime has an in-sample error of approximately 0.33. Therefore, our model predicts better than the basic model for in-sample predictions. Our model's error rate improves under five-fold cross-validation, with an MSE of 0.0588. This indicates that the model is wrong 5.88% of the time under cross-validation, showing that we have predictive power in our model.
+
+
+# 2.3.2 Calibration
+
+Next, we will check the calibration of the probabilities. 
+```{r}
+# Code from HW 6, slightly modified
+frequency.vs.probability <- function(p.lower,p.increment=0.01,
+  model=snoq2.logistic,events=(snoq$tomorrow>0)) {
+  fitted.probs <- fitted(model)
+  indices <- (fitted.probs >= p.lower) & (fitted.probs < p.lower+p.increment) &
+             !is.na(fitted.probs)
+  ave.prob <- mean(fitted.probs[indices])
+  frequency <- mean(events[indices])
+  individual.vars <- fitted.probs[indices]*(1-fitted.probs[indices])
+  var.of.average <- sum(individual.vars)/(sum(indices)^2)
+  se <- sqrt(var.of.average)
+  out <-c(frequency=frequency,ave.prob=ave.prob,se=se)
+  return(out)
+}
+
+plot.calibration <- function(model, p.increment=0.1, events) {
+    # Figure out the probability bins
+    p.lowers <- seq(from=0,to=1,by=p.increment)
+    # Get the actual frequencies, average probabilities, and standard errors
+    # for each
+    f.vs.p <- sapply(p.lowers,frequency.vs.probability,
+                     p.increment=p.increment,model=model,events=events)
+    # turn into a more-plottable data frame
+    f.vs.p <- t(f.vs.p)
+    f.vs.p <- as.data.frame(f.vs.p)
+    # plot the probability vs. frequency points
+    plot(f.vs.p$ave.prob,f.vs.p$frequency,xlab="Predicted probability",
+         ylab="Observed frequency",xlim=c(0,1),ylim=c(0,1))
+    # add the 45 degree line for visual reference
+    abline(0,1,lty="dashed")
+    # Add error bars at +- 1.96 standard errors.  Note these are centered on
+    # the average probability, not on the observed frequency, so the point
+    # should fall inside the line _about_ 95% of the time (if there are a lot of
+    # observations in each bin)
+    segments(x0=f.vs.p$ave.prob,y0=f.vs.p$ave.prob-1.96*f.vs.p$se,
+             y1=f.vs.p$ave.prob+1.96*f.vs.p$se)
+    invisible(f.vs.p)
+}
+```
+
+In figure 5, we display the calibration plot for the logistic regression done by our model, using probability bins of width 10 percentage points. We can see that the vertical lines, which indicate the 95% confidence intervals for the observed frequency of each predicted probability,
+
+```{r, fig.height=3.5}
+plot.calibration(ch.fin,events=ch$start)
+```
+
+As the predicted probabilities increase, there is a fluctuation between an increase and decrease in observed frequency. The observed frequencies of the predicted probabilities increase until 0.2, then decrease and stay the same from 0.2-0.4, increase at 0.4, decrease at 0.5, then again increase from 0.6 onwards. Moreover, the 95% confidence intervals of the points are quite large, indicating that our model may not be as well calibrated as we would hope. 
+
+
+# 2.3.3 Residuals 
+
+
+Next, we will check the residuals of our model against each predictor using pearson residuals. Since our outcomes are categories, we need to standardize the residuals to pearson residuals. We standardize by using the equations $\frac{y_i-p_i}{(p_i(1-p_i))^{1/2}}$. Figure 5 shows plots of the regular pearson residuals, whereas, figure 6 shows plots of the squared pearson residuals. For figure 5, we expect the residuals to fluctuate around y = 0 with no pattern to the fluctuation. In gray are the simulated new responses based on our fitted model. For figure 6, we expect the residuals to fluctuate around y = 1. In gray are the simulated new responses based on our fitted model. In both figures 5 and 6, the predicted response lines do not warrant further attention. The squared residuals do seem of concern as they do not evenly fluctuate about y = 1. Furthermore, the pearson residuals (not squared) observe some heteroskedascity which could potentially influence our model. However, they are not distributed in a strong pattern, so it is fine for our purposes.
+
+```{r}
+og_data <- ch
+data <- na.omit(og_data)
+gam_model = gam(start ~ s(exports) + s(growth) + s(lnpop) + dominance + s(peace),
+                    data = data, family = "binomial",
+                    na.action=na.exclude)
+```
+
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+sim.pearson.residuals <- function(mdl) {
+    # Copy the fitted values over into the simulated response vector
+    y <- fitted(mdl)
+    # Which values aren't NA?
+    good.positions <- which(!is.na(y))
+    y[good.positions] <- rbinom(n=length(good.positions),size=1,
+                               prob=y[good.positions])
+    # Calculate raw residuals and divide by standard deviation
+    r <- (y-fitted(mdl))/sqrt(fitted(mdl)*(1-fitted(mdl)))
+    return(r)
+}
+
+resid.plot <- function(mdl,data=mdl$data,var="fitted",sq=FALSE,B=20,
+                       col.pts="black",...) {
+    # Which rows of the data frame would have NAs?
+    na.rows <- mdl$na.action
+    good.rows <- complete.cases(data)
+    if (var=="fitted") {
+        # Take fitted values from the model
+          # No editing for NAs necessary b/c the NAs of fitted values and
+          # residuals must match
+        xvar <- na.omit(fitted(mdl))
+    } else {
+        # Take values from one column of the data frame
+           # Don't include rows where the residuals will be NA
+        #xvar <- data[-na.rows,var]
+        xvar <- data[good.rows, var, drop = FALSE][[1]]
+    }
+    # y variable is always residuals, without NAs...
+    yvar <- na.omit(residuals(mdl,type="pearson"))
+    # ... possibly squared
+    if (sq) { yvar <- yvar^2 }
+    # Create the plot, passing in any optional plotting arguments regarding
+    # titles and labels, plotting characters, colors, etc., etc.
+    plot(x=xvar, y=yvar, col=col.pts[good.rows], ...)
+    rug(xvar,side=1,col=col.pts[good.rows],ticksize=-0.03)
+      # Negative ticksize means rug tassles go outwards, not inwards
+    # If we're simulating, add in the simulated curves as faint grey lines
+    if (B > 0) {
+        replicate(B, lines(smooth.spline(x=xvar,
+             # Trick: do we square simulated residuals before smoothing?
+             y=na.omit(sim.pearson.residuals(mdl))^(1+sq)),
+             col="lightgrey",lwd=0.5))
+    }
+    # Add the main smoothed curve
+    residual.curve <- smooth.spline(x=xvar,y=yvar)
+    lines(residual.curve)
+    invisible(residual.curve)
+}
+```
+
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+par(mfrow=c(2,3))
+resid.plot(gam_model,og_data,var="fitted",xlab="Predicted probability",
+           ylab="Pearson residuals",pch=16,cex=0.5,
+           col.pts=ifelse(og_data$dominance==1,"blue","black"))
+
+resid.plot(gam_model,og_data,var="exports",xlab="Log of Exports",
+           ylab="Pearson residuals",pch=16,cex=0.5,
+           col.pts=ifelse(og_data$dominance==1,"blue","black"))
+
+resid.plot(gam_model,og_data,var="growth",xlab="Growth",
+           ylab="Pearson residuals",pch=16,cex=0.5,
+           col.pts=ifelse(og_data$dominance==1,"blue","black"))
+
+resid.plot(gam_model,og_data,var="lnpop",xlab="Log of Population",
+           ylab="Pearson residuals",pch=16,cex=0.5,
+           col.pts=ifelse(og_data$dominance==1,"blue","black"))
+
+resid.plot(gam_model,og_data,var="peace",xlab="Peace",
+           ylab="Pearson residuals",pch=16,cex=0.5,
+           col.pts=ifelse(og_data$dominance==1,"blue","black"))
+par(mfrow=c(1,1))
+```
+
+
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+par(mfrow=c(2,3))
+resid.plot(gam_model,og_data,var="fitted",xlab="Predicted probability",
+           ylab="Pearson residuals",pch=16,sq=TRUE,cex=0.5,ylim=c(0,8),
+           col.pts=ifelse(og_data$dominance==1,"blue","black"))
+
+resid.plot(gam_model,og_data,var="exports",xlab="Log of Exports",
+           ylab="Pearson residuals",pch=16,sq=TRUE,cex=0.5,ylim=c(0,8),
+           col.pts=ifelse(og_data$dominance==1,"blue","black"))
+
+resid.plot(gam_model,og_data,var="growth",xlab="Growth",
+           ylab="Pearson residuals",pch=16,sq=TRUE,cex=0.5,ylim=c(0,8),
+           col.pts=ifelse(og_data$dominance==1,"blue","black"))
+
+resid.plot(gam_model,og_data,var="lnpop",xlab="Log of Population",
+           ylab="Pearson residuals",pch=16,sq=TRUE,cex=0.5,ylim=c(0,8),
+           col.pts=ifelse(og_data$dominance==1,"blue","black"))
+
+resid.plot(gam_model,og_data,var="peace",xlab="Peace",
+           ylab="Pearson residuals",pch=16,sq=TRUE,cex=0.5,ylim=c(0,8),
+           col.pts=ifelse(og_data$dominance==1,"blue","black"))
+par(mfrow=c(1,1))
+```
+
+
+# 3 Conclusions
+
+The positive point estimate of dominance suggests that as dominance of one ethnic increases, civil war is more likely to start. We also observe in the partial response functions that an increase in population and an increase in commodity exports is associated with higher odds of a civil war starting, whereas, a higher GDP growth rate and a longer duration of peace are associated with lower odds of a civil war outbreak. However, we do note that all of the confidence intervals for the point estimate of dominance and for the four partial response functions overlapped 0. Due to this we can not readily determine significance of variables and whether or not certain predictors should be removed. From our analysis, it appears that a country with low ethnic dominance, a high GDP growth rate, a long duration of peace, and low commodity exports would have low odds of a civil war outbreaking in a five-year time period.
+
+Our results support the two theories that countries with more ethnic dominance are more prone to civil war outbreaks as well as countries who have a higher economic dependence on commodty exports. Specifically, we found that dominance, log population, (log) exports, peace, and growth, can be used to predict the start of civil wars. Compared to other variables, these predictors improved the prediction accuracy of our model, whereas, the excluded predictors in our dataset served to worsen the model.
+
+We must take these results and conclusions with a grain of salt. Through model checking, we determined that our model may not be well calibrated. Furthermore, our residuals observed some heteroskedascity that may influence the model, although it is not to an extreme amount. Since the residuals and simulated responses in the residuals are doable for now, we proceeded with this model for our report. Additionally, through observing classification errors for in-sample and out-of sample, we found that our model performs better than a baseline model that only predicts the most common class. Our model makes an out-of-sample error less than 6% of the time, highlighting its predictive power. However, future work can be done to improve the model to further validate these conclusions.
+
+Future analysis could take into consideration interactions which our model did not account for as well as all possible combinations of predictor variables. We only tested a few predictor variables and their impact on cross-validated MSE due to time constrains, however, testing all possible combinations (or at the very least, more than what this report did) could lead to a better predictive model that can more accurately answer these questions. Further data collection could also look into other aspects of society that influence politics, economics, and strike (such as percentage of people who are poor) to identify more metrics that may help us elucidate the accuracy of the two theories posed. 

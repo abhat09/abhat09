@@ -1,0 +1,1017 @@
+---
+title: 'Coffee Break # 2 Final RMD'
+author: "Anusha Bhat"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+## Libraries 
+
+```{r setup, include=FALSE, messages = FALSE, warnings = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggraph)
+library(tidyverse)
+library(quanteda)
+library(ggplot2)
+library(quanteda.textstats)
+library(readtext)
+library(kableExtra)
+load("../data/multiword_expressions.rda")
+source("../R/dispersion_functions.R")
+source("../R/helper_functions.R")
+source("../R/utility_functions.R")
+source("../R/collocation_functions.R")
+source("../R/keyness_functions.R")
+set.seed(1234)
+library(udpipe)
+library(readr)
+library(igraph)
+library(nnet)
+library(ggraph)
+library(nFactors)
+library(udpipe)
+library(pseudobibeR)
+library(cluster)
+library(factoextra)
+source("../R/mda_functions.R")
+library(syuzhet)
+```
+
+
+
+
+## Loading corpus
+
+# --> TS songs folder 
+```{r}
+# reading in song lyrics txt files and form a corpus
+ts_files = list.files("../final_project/TS_albums", full.names = T, 
+                      pattern = "*.txt", recursive = T, include.dirs = T)
+ts_corpus <- ts_files %>%
+  readtext::readtext() %>%
+  mutate(text = quanteda.extras::preprocess_text(text),
+         ) %>%
+  corpus() 
+
+# tokenize corpus and remove filler lyrics and make all tokens lowercase 
+
+remove_lyrics = c("like", "ooh", "oh", "yeah", "mm", "mhm", "ah", "oh-oh", "eh",
+                  "oo-oo-oo", "whoa", "ah-ah", "ha", "eh", "oh-ah", "uh", "woo",
+                  "ya ya", "ya", "yaka", "la-la-la", "na", "na na")
+
+ts = ts_corpus %>%
+  tokens(what = "fastestword", remove_numbers = TRUE, remove_punct = TRUE,
+         remove_symbols = TRUE, remove_seperators = TRUE,
+         remove_twitter = TRUE, remove_hyphens = TRUE) 
+
+ts = ts %>% 
+  tokens_tolower()
+
+ts = tokens_select(ts, remove_lyrics, selection = "remove")
+
+# remove conjunctions and pronouns to keep meaningful words for freq tables 
+conjunctions = c("for", "and", "nor", "yet", "so", "still", "besides", 
+                         "otherwise", "or else", "nevertheless", "but", "or",
+                 "a", "an", "and")
+
+pronouns = c("she", "he", "they", "them", "their", "hers", "his",
+           "theirs", "him", "i", "you", "it", "we", "us", "me", "mine",
+           "ours", "its", "your", "yours")
+
+ts_sig = tokens_select(ts, conjunctions, selection = "remove")
+ts_sig = tokens_select(ts_sig, pronouns, selection = "remove")
+
+
+# loading csv file for parts of speech tagging
+
+ts_csv <- read.csv("../final_project/Taylor_Swift1.csv")
+ts_csv2 <- read.csv("../final_project/Taylor_Swift.csv") # no albums column
+
+```
+
+# --> Beyonce songs folder
+```{r}
+# reading in song lyrics and form a corpus
+bey_files = list.files("../final_project/Beyonce_songs", full.names = T, 
+                      pattern = "*.txt", recursive = T, include.dirs = T)
+bey_corpus <- bey_files %>%
+  readtext::readtext() %>%
+  mutate(text = quanteda.extras::preprocess_text(text),
+         ) %>%
+  corpus() 
+
+# tokenize corpus and remove filler lyrics and make all tokens lowercase 
+
+bey = bey_corpus %>%
+  tokens(what = "fastestword", remove_numbers = TRUE, remove_punct = TRUE,
+         remove_symbols = TRUE, remove_seperators = TRUE,
+         remove_twitter = TRUE, remove_hyphens = TRUE) 
+
+bey = bey %>% 
+  tokens_tolower()
+
+bey = tokens_select(bey, remove_lyrics, selection = "remove")
+
+# remove conjunctions and pronouns to keep meaningful words for freq tables 
+
+bey_sig = tokens_select(bey, conjunctions, selection = "remove")
+bey_sig = tokens_select(bey_sig, pronouns, selection = "remove")
+
+# loading csv file for parts of speech tagging 
+
+bey_csv = read.csv("../final_project/Beyonce1.csv")
+bey_csv2 = read.csv("../final_project/Beyonce.csv") # no albums 
+```
+
+
+
+
+## EDA
+
+
+# corpus composition --> TS
+```{r}
+# corpus composition based on token counts for each song
+ts_ntoks = data.frame(Tokens = ntoken(ts))
+ts_ntoks = ts_ntoks %>% 
+  mutate(Percent = 100 * Tokens/colSums(ts_ntoks))
+
+knitr::kable(head(ts_ntoks[order(ts_ntoks$Tokens, decreasing = TRUE), ], 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 2", notation = "number") %>%
+  kable_classic()
+
+# number of total tokens 
+colSums(ts_ntoks)
+
+# corpus composition based on token counts for each album
+TS_albums_ntoks = data.frame(Album = c("Taylor Swift",
+                                       "Folklore",
+                                       "Evermore",
+                                       "Lover",
+                                       "Reputation",
+                                       "Midnights",
+                                       "Fearless Taylor's Version",
+                                       "1989 Taylor's Version",
+                                       "Speak Now Taylor's Version",
+                                       "Red Taylor's Version"), 
+                             Tokens = c(4183, 5223, 6193, 6531, 7186, 
+                                        7304, 8772, 8606, 9528, 
+                                        20648))
+
+TS_albums_ntoks = TS_albums_ntoks %>%
+  mutate(Percent = 100 * Tokens/sum(TS_albums_ntoks$Tokens))
+
+knitr::kable(map_df(TS_albums_ntoks, rev),
+             caption = "Proportion of Taylor Swift's albums in corpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 4", notation = "number") %>%
+  kable_classic()
+```
+
+
+# corpus composition --> Beyonce
+```{r}
+# corpus composition based on token counts for each song
+bey_ntoks = data.frame(Tokens = ntoken(bey))
+bey_ntoks = bey_ntoks %>% 
+  mutate(Percent = 100 * Tokens/colSums(bey_ntoks))
+
+knitr::kable(head(bey_ntoks[order(bey_ntoks$Tokens, decreasing = TRUE), ], 5),
+             caption = "Proportion of Beyonce's Songs in the Corpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 1", notation = "number") %>%
+  kable_classic()
+
+# number of total tokens 
+colSums(bey_ntoks)
+
+# corpus composition based on token counts for each album
+bey_albums_ntoks = data.frame(Album = c("Lemonade", "4", "B'Day", 
+                                        "I Am ... Sasha Fierce",
+                                        "Renaissance", 
+                                        "Beyonce", "Dangerously In Love"), 
+                             Tokens = c(4800, 6732, 7733, 7999, 
+                                        8685, 8700, 9154))
+
+bey_albums_ntoks = bey_albums_ntoks %>%
+  mutate(Percent = 100 * Tokens/sum(bey_albums_ntoks$Tokens))
+
+knitr::kable(map_df(bey_albums_ntoks, rev),
+             caption = "Proportion of Beyonce's albums in corpus") %>%
+  kable_styling() %>%
+  add_footnote("Table 2", notation = "number") %>%
+  kable_classic() 
+```
+
+
+# Frequency tables --> no tagging 
+```{r}
+# frequency tables
+
+# TS top 5
+ts_freq = textstat_frequency(dfm(ts))
+ts_freq = mutate(ts_freq, RelFreq = (frequency/sum(frequency))*1000000)
+knitr::kable(head(ts_freq, 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 2", notation = "number") %>%
+  kable_classic()
+
+#ts_freq2 = frequency_table(ts)
+#knitr::kable(head(ts_freq2, 5), digits = 3, caption = "Frequency and dispersion measures for the top 5 Tokens.") %>%
+ # kable_styling()
+
+# Bey top 5
+bey_freq = textstat_frequency(dfm(bey))
+beys_freq = mutate(bey_freq, RelFreq = (frequency/sum(frequency))*1000000)
+knitr::kable(head(bey_freq, 5)) %>%
+  kable_styling() %>%
+  add_footnote("Table 2", notation = "number") %>%
+  kable_classic()
+
+```
+
+
+# frequency tables --> with tagging --> Taylor Swift 
+```{r, include = FALSE}
+# model object 
+ud_model <- udpipe_load_model("../models/english-ewt-ud-2.5-191206.udpipe")
+
+# tag TS corpus with csv file 
+ts_an <- data.table::as.data.table(udpipe_annotate(ud_model, x = ts_csv$text,
+                                                 doc_id = ts_csv$doc_id))
+
+# edit TS corpus after tagging to rename pos and tag columns 
+ts_anno_edit <- ts_an %>%
+  dplyr::select(doc_id, sentence_id, token_id, token, lemma, upos, xpos, head_token_id, dep_rel) %>%
+  rename(pos = upos, tag = xpos)
+
+# make into a data frame 
+ts_anno_edit <- structure(ts_anno_edit, class = c("spacyr_parsed", "data.frame"))
+
+# tokenize 
+ts_sub_tkns <- as.tokens(ts_anno_edit, include_pos = "tag", concatenator = "_")
+
+# get the doc categories 
+ts_doc_categories <- names(ts_sub_tkns) %>%
+  data.frame(text_type = .) %>%
+  mutate(text_type = str_extract(text_type, "^[a-z]+"))
+
+# set doc categories equal to docvars 
+docvars(ts_sub_tkns) <- ts_doc_categories
+
+
+# create dfm 
+ts_sub_dfm <- ts_sub_tkns %>%
+  tokens_select("^.*[a-zA-Z0-9]+.*_[a-z]", selection = "keep", 
+                valuetype = "regex", case_insensitive = T) %>%
+  dfm()
+
+# frequency table 
+kableExtra::kbl(textstat_frequency(ts_sub_dfm, n = 5), 
+                caption = "Most frequent tokens tagged for part-of-speech in Taylor Swift corpus.",
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 5", notation = "number")
+```
+
+# frequency tables --> with tagging --> Beyonce
+```{r, include = FALSE}
+bey_an <- data.table::as.data.table(udpipe_annotate(ud_model, x = bey_csv$text,
+                                                 doc_id = bey_csv$doc_id))
+
+bey_anno_edit <- bey_an %>%
+  dplyr::select(doc_id, sentence_id, token_id, token, lemma, upos, xpos, head_token_id, dep_rel) %>%
+  rename(pos = upos, tag = xpos)
+
+bey_anno_edit <- structure(bey_anno_edit, class = c("spacyr_parsed", "data.frame"))
+
+bey_sub_tkns <- as.tokens(bey_anno_edit, include_pos = "tag", concatenator = "_")
+
+bey_doc_categories <- names(bey_sub_tkns) %>%
+  data.frame(text_type = .) %>%
+  mutate(text_type = str_extract(text_type, "^[a-z]+"))
+
+docvars(bey_sub_tkns) <- bey_doc_categories
+
+bey_sub_dfm <- bey_sub_tkns %>%
+  tokens_select("^.*[a-zA-Z0-9]+.*_[a-z]", selection = "keep", 
+                valuetype = "regex", case_insensitive = T) %>%
+  dfm()
+
+kableExtra::kbl(textstat_frequency(bey_sub_dfm, n = 5), 
+                caption = "Most frequent tokens tagged for part-of-speech in Beyonce corpus.", 
+                
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 6", notation = "number")
+```
+
+
+
+
+
+## Actual Analysis
+
+
+
+# Keyness tables no tagging --> TS ref Bey Target 
+
+```{r}
+# make dfms 
+ts_dfm <- ts %>%
+  tokens_compound(pattern = phrase(multiword_expressions)) %>%
+  dfm()
+
+bey_dfm <- bey %>%
+  tokens_compound(pattern = phrase(multiword_expressions)) %>%
+  dfm()
+
+# keyness analysis 
+overall_key = keyness_table(ts_dfm, bey_dfm)
+
+
+# keyness analysis 
+make_key = function(ts, bey){
+  ts_dfm <- ts %>%
+   tokens_compound(pattern = phrase(multiword_expressions)) %>%
+    dfm()
+ bey_dfm <- bey %>%
+  tokens_compound(pattern = phrase(multiword_expressions)) %>%
+  dfm()
+ return(keyness_table(ts_dfm, bey_dfm))
+}
+  
+
+overall_key = make_key(ts, bey)
+
+# decreasing LL
+knitr::kable(head(overall_key[order(overall_key$LL, decreasing = TRUE),], 5),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 9", notation = "number") %>% 
+  kable_classic()
+
+# decreasing LR 
+knitr::kable(head(overall_key[order(overall_key$LR, decreasing = TRUE),], 5),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 10", notation = "number") %>% 
+  kable_classic()
+```
+
+# Keyness tables no tagging --> Bey ref TS Target 
+
+```{r}
+# keyness analysis 
+overall_key1 = keyness_table(bey_dfm, ts_dfm)
+
+# decreasing LL
+knitr::kable(head(overall_key1[order(overall_key1$LL, decreasing = TRUE),], 5),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 9", notation = "number") %>% 
+  kable_classic()
+
+# decreasing LR 
+knitr::kable(head(overall_key1[order(overall_key1$LR, decreasing = TRUE),], 5),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 10", notation = "number") %>% 
+  kable_classic()
+```
+
+
+# Keyness tables with tagging --> TS ref Bey Target 
+
+```{r}
+# keyness analysis 
+overall_key_tag = keyness_table(ts_sub_dfm, bey_sub_dfm)
+
+# decreasing LL
+knitr::kable(head(overall_key_tag[order(overall_key_tag$LL, decreasing = TRUE),], 5),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 8", notation = "number") %>% 
+  kable_classic()
+
+# decreasing LR 
+knitr::kable(head(overall_key_tag[order(overall_key_tag$LR, decreasing = TRUE),], 5),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 10", notation = "number") %>% 
+  kable_classic()
+```
+
+
+
+# Keyness tables with tagging --> Bey ref TS Target 
+
+```{r}
+# keyness analysis 
+overall_key_tag1 = keyness_table(bey_sub_dfm, ts_sub_dfm)
+
+# decreasing LL
+knitr::kable(head(overall_key_tag1[order(overall_key_tag1$LL, decreasing = TRUE),], 5),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 9", notation = "number") %>% 
+  kable_classic()
+
+# decreasing LR 
+knitr::kable(head(overall_key_tag1[order(overall_key_tag1$LR, decreasing = TRUE),], 5),
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 10", notation = "number") %>% 
+  kable_classic()
+```
+
+# Keyness for modal verbs & adjectives 
+
+```{r}
+# ts ref bey target 
+key_tag = overall_key_tag %>%
+  separate(col = Token, into = c("Token", "Tag"), sep = "_")
+
+# bey ref ts target 
+key_tag1 = overall_key_tag1 %>%
+  separate(col = Token, into = c("Token", "Tag"), sep = "_")
+
+
+# modal verbs 
+kableExtra::kbl(head(key_tag %>% filter(Tag == "md"), 5), 
+                caption = "A keyness comparision of modal verbs", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 9", notation = "number")
+
+
+kableExtra::kbl(head(key_tag1 %>% filter(Tag == "md"), 5), 
+                caption = "A keyness comparision of modal verbs", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 10", notation = "number")
+
+
+# adjectives 
+
+kableExtra::kbl(head(key_tag %>% filter(Tag %in% c("jj", "jjr", "jjs")), 5), 
+                caption = "A keyness comparision of modal verbs", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 10", notation = "number")
+
+
+
+kableExtra::kbl(head(key_tag1 %>% filter(Tag %in% c("jj", "jjr", "jjs")), 5), 
+                caption = "A keyness comparision of modal verbs", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic()
+```
+
+# number of each parts of speech
+
+```{r}
+POS = c("Adjective", "Adverbs", "Coordinating Conjunctions",
+        "Determiners", "Nouns", "Particles", "Pronouns", "Verbs")
+Beyonce = c(3219, 4724, 1083, 3520, 9620, 607, 12134, 
+                8798) * 100 / 53823
+Taylor = c(3580, 7477, 2697, 5426, 11669, 647, 15390, 
+           12875) * 100 / 74174
+
+num_pos = data.frame(POS, Beyonce, Taylor)
+
+kableExtra::kbl(num_pos, 
+                caption = "Relative Frequency of Parts of Speech Tags", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 7", notation = "number")
+
+```
+
+
+# KWIC love --> Taylor swift 
+
+```{r}
+# create kwic table and convert to a data frame 
+kwic_tab = data.frame(kwic(ts, pattern = "love", window = 5))
+
+# group by song names to find rows where the songs all start
+kwic_tab = kwic_tab %>% 
+  group_by(docname)
+
+# some of her popular love songs 
+kwic_tab = kwic_tab[c(10, 21, 38, 51, 57, 77, 152, 154, 161, 192),]
+kwic_tab = kwic_tab[,-c(2, 3, 7)]
+
+kableExtra::kbl(kwic_tab, 
+                caption = "KWIC of Love", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 10", notation = "number")
+```
+
+
+# KWIC love --> Beyonce
+
+```{r}
+# create kwic table and convert to a data frame 
+kwic_tab1 = data.frame(kwic(bey, pattern = "love", window = 5))
+
+# group by song names to find rows where the songs all start
+kwic_tab1 = kwic_tab1 %>% 
+  group_by(docname)
+
+# some of her popular love songs 
+kwic_tab1 = kwic_tab1[c(13, 22, 48, 127, 184, 282, 333, 338, 344, 392),]
+kwic_tab1 = kwic_tab1[,-c(2, 3, 7)]
+
+kableExtra::kbl(kwic_tab1, 
+                caption = "KWIC of Love", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 11", notation = "number")
+```
+
+
+
+# KWIC Hate --> Taylor swift 
+
+```{r}
+# create kwic table and convert to a data frame 
+kwic_tab2 = data.frame(kwic(ts, pattern = "hate", window = 5))
+
+# group by song names to find rows where the songs all start
+kwic_tab2 = kwic_tab2 %>% 
+  group_by(docname)
+kwic_tab2
+# some of her popular love songs 
+kwic_tab2 = kwic_tab2[c(1, 6, 7, 11, 13, 15, 21, 30, 38, 37),]
+kwic_tab2 = kwic_tab2[,-c(2, 3, 7)]
+
+kableExtra::kbl(kwic_tab2,
+                caption = "KWIC of Hate", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 12", notation = "number")
+```
+
+
+# KWIC hate --> Beyonce
+
+```{r}
+# create kwic table and convert to a data frame 
+kwic_tab3 = data.frame(kwic(bey, pattern = "hate", window = 5))
+
+# group by song names to find rows where the songs all start
+kwic_tab3 = kwic_tab3 %>% 
+  group_by(docname)
+
+kwic_tab3
+
+# some of her popular love songs 
+kwic_tab3 = kwic_tab3[c(1, 5, 6, 11, 12, 17),]
+kwic_tab3 = kwic_tab3[,-c(2, 3, 7)]
+
+kableExtra::kbl(kwic_tab3, 
+                caption = "KWIC of Hate", 
+                booktabs = T, linesep = "", digits = 2) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position") %>%
+  kableExtra::kable_classic() %>%
+  add_footnote("Table 13", notation = "number")
+```
+
+
+# PCA --> both
+
+```{r}
+# sample 10 random songs from each corpus 
+vec1 = c(sample(0:198, 10, replace = F))
+ts_pca = ts_csv2[vec1,]
+
+vec2 = c(sample(0:113, 10, replace = F))
+bey_pca = bey_csv2[vec2,]
+pca_data = rbind(ts_pca, bey_pca)
+
+# Parse and tag the data
+pca_prsd <- udpipe_annotate(ud_model, x = pca_data$text, doc_id = pca_data$doc_id)
+
+# Convert to a data frame
+pca_prsd <- data.frame(pca_prsd, stringsAsFactors = F)
+
+# edit the data frame 
+pca_anno_edit <- pca_prsd %>%
+  as_tibble() %>%
+  unite("upos", upos:xpos)
+
+pca_toks <- split(pca_anno_edit$upos, pca_anno_edit$doc_id)
+
+# tokenize
+pca_toks <- as.tokens(pca_toks)
+pca_toks <- tokens_remove(pca_toks, "^punct_\\S+", valuetype = "regex")
+pca_toks <- tokens_remove(pca_toks, "^sym_\\S+", valuetype = "regex")
+pca_toks <- tokens_remove(pca_toks, "^x_\\S+", valuetype = "regex")
+
+# create dfm
+pca_sub_dfm <- pca_toks %>%
+  dfm() %>%
+  dfm_weight(scheme = "prop") %>%
+  convert(to = "data.frame")
+
+pca_sub_dfm <- pca_sub_dfm %>% column_to_rownames("doc_id") %>% 
+  dplyr::select(order(colnames(.)))
+
+pca_sub_dfm <- pca_sub_dfm %>% scale() %>% data.frame()
+
+# princinple components 
+km_pca <- prcomp(pca_sub_dfm)
+
+# plot
+fviz_pca_biplot(km_pca, repel = TRUE,
+                select.var = list(contrib=10),
+                col.var = "blue", # Variables color
+                col.ind = "light pink"  # Individuals color
+)
+
+```
+
+
+# histogram of themes --> Taylor swift  
+```{r}
+bin_width <- function(x){
+  2 * IQR(x) / length(x)^(1/3)
+}
+
+# Create the dfm 
+ts_prop_dfm <- dfm_weight(dfm(ts), scheme = "prop")
+ts_word_df <- dfm_select(ts_prop_dfm, "^love$|^hate$|^friend$|^trust$|^revenge$", 
+                         valuetype = "regex")
+
+# Normalize to 10000 words.
+ts_word_df <- ts_word_df %>% 
+  convert(to = "data.frame") %>%
+  mutate(love = love*10000) %>%
+  mutate(hate = hate*10000) %>% 
+  mutate(friend = friend*10000) %>%
+  mutate(trust = trust*10000) %>%
+  mutate(revenge = revenge*10000)
+
+# Use "pivot_longer" to go from a wide format to a long one
+ts_word_df <- ts_word_df %>% 
+  pivot_longer(!doc_id, names_to = "Token", values_to = "RF") %>% 
+  mutate(Token = factor(Token))
+
+
+ggplot(ts_word_df, aes(x = RF)) +
+  geom_density(aes(y = after_stat(density), fill = Token), alpha = 0.25) +
+  labs( x = "Relative Frequency (per mill. words)", y = "Count",
+      subtitle = "Figure 1",
+      title = "Density Curves for Various Themes: Taylor Swift") +
+  xlim(0, 100) +
+  ylim(0, 0.2)
+```
+
+# histogram of themes --> beyonce
+```{r}
+# Create the dfm 
+bey_prop_dfm <- dfm_weight(dfm(bey), scheme = "prop")
+bey_word_df <- dfm_select(bey_prop_dfm, "^love$|^hate$|^friend$|^trust$|^revenge$", 
+                         valuetype = "regex")
+
+# Normalize to 10000 words.
+bey_word_df <- bey_word_df %>% 
+  convert(to = "data.frame") %>%
+  mutate(love = love*10000) %>%
+  mutate(hate = hate*10000) %>% 
+  mutate(friend = friend*10000) %>%
+  mutate(trust = trust*10000) %>%
+  mutate(revenge = revenge*10000)
+
+# Use "pivot_longer" to go from a wide format to a long one
+bey_word_df <- bey_word_df %>% 
+  pivot_longer(!doc_id, names_to = "Token", values_to = "RF") %>% 
+  mutate(Token = factor(Token))
+
+
+ggplot(bey_word_df, aes(x = RF)) +
+  geom_density(aes(y = after_stat(density), fill = Token), alpha = 0.25) +
+  labs( x = "Relative Frequency (per mill. words)", y = "Count",
+      subtitle = "Figure 2",
+      title = "Density Curves for Various Themes: Beyonce") +
+  xlim(0, 100) +
+  ylim(0, 0.15)
+
+
+```
+
+## Collocations by theme 
+
+
+# Love --> table
+```{r}
+# love collocations
+love_ts_col <- collocates_by_MI(ts, "love")
+love_bey_col <- collocates_by_MI(bey, "love")
+
+love_ts <- love_ts_col %>% filter(col_freq >= 5 & MI_1 >= 5)
+love_bey <- love_bey_col %>% filter(col_freq >= 5 & MI_1 >= 5)
+
+knitr::kable(head(love_ts[order(love_ts$col_freq, decreasing = TRUE),]), 
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+
+knitr::kable(head(love_bey[order(love_bey$col_freq, decreasing = TRUE),]), 
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+
+```
+
+# love --> plot
+```{r}
+net1 <- col_network(love_ts, love_bey)
+
+ggraph(net1, weight = link_weight, layout = "stress") + 
+  geom_edge_link(color = "gray80", alpha = .75) + 
+  geom_node_point(aes(alpha = node_weight, size = 3, color = n_intersects)) +
+  geom_node_text(aes(label = label), repel = T, size = 3) +
+  scale_alpha(range = c(0.2, 0.9)) +
+  theme_graph() +
+  theme(legend.position="none") +
+  labs(subtitle = "Figure 3")
+```
+
+
+# Hate collocations 
+
+# hate --> table
+```{r}
+# love collocations
+hate_ts_col <- collocates_by_MI(ts, "hate")
+hate_bey_col <- collocates_by_MI(bey, "hate")
+
+hate_ts <- hate_ts_col %>% filter(col_freq >= 5 & MI_1 >= 1)
+hate_bey <- hate_bey_col %>% filter(col_freq >= 5 & MI_1 >= 1)
+
+knitr::kable(head(hate_ts[order(hate_ts$col_freq, decreasing = TRUE),]), 
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+
+knitr::kable(head(hate_bey[order(hate_bey$col_freq, decreasing = TRUE),]), 
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+
+```
+
+# hate --> plot
+```{r}
+net2 <- col_network(hate_ts, hate_bey)
+
+ggraph(net2, weight = link_weight, layout = "stress") + 
+  geom_edge_link(color = "gray80", alpha = .75) + 
+  geom_node_point(aes(alpha = node_weight, size = 3, color = n_intersects)) +
+  geom_node_text(aes(label = label), repel = T, size = 3) +
+  scale_alpha(range = c(0.2, 0.9)) +
+  theme_graph() +
+  theme(legend.position="none") +
+  labs(subtitle = "Figure 4")
+```
+
+# Friendship --> table
+```{r}
+# love collocations
+fr_ts_col <- collocates_by_MI(ts, "friends")
+fr_bey_col <- collocates_by_MI(bey, "friends")
+
+fr_ts <- fr_ts_col %>% filter(col_freq >= 5 & MI_1 >= 3)
+fr_bey <- fr_bey_col %>% filter(col_freq >= 5 & MI_1 >= 3)
+
+knitr::kable(head(fr_ts[order(fr_ts$col_freq, decreasing = TRUE),]), 
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+
+knitr::kable(head(fr_bey[order(fr_bey$col_freq, decreasing = TRUE),]), 
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+
+```
+
+# Friendship --> plot
+
+```{r}
+net3 <- col_network(fr_ts, fr_bey)
+
+ggraph(net3, weight = link_weight, layout = "stress") + 
+  geom_edge_link(color = "gray80", alpha = .75) + 
+  geom_node_point(aes(alpha = node_weight, size = 3, color = n_intersects)) +
+  geom_node_text(aes(label = label), repel = T, size = 3) +
+  scale_alpha(range = c(0.2, 0.9)) +
+  theme_graph() +
+  theme(legend.position="none") +
+  labs(subtitle = "Figure 4")
+```
+
+# Trust --> table
+```{r}
+# love collocations
+trust_ts_col <- collocates_by_MI(ts, "trust")
+trust_bey_col <- collocates_by_MI(bey, "trust")
+
+trust_ts <- trust_ts_col %>% filter(col_freq >= 5 & MI_1 >= 3)
+trust_bey <- trust_bey_col %>% filter(col_freq >= 5 & MI_1 >= 3)
+
+knitr::kable(head(trust_ts[order(trust_ts$col_freq, decreasing = TRUE),]), 
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+
+knitr::kable(head(trust_bey[order(trust_bey$col_freq, decreasing = TRUE),]), 
+             digits = 5) %>%
+  kable_styling() %>%
+  add_footnote("Table 3", notation = "number") %>%
+  kable_classic()
+
+```
+
+
+```{r}
+net4 <- col_network(trust_ts, trust_bey)
+
+ggraph(net4, weight = link_weight, layout = "stress") + 
+  geom_edge_link(color = "gray80", alpha = .75) + 
+  geom_node_point(aes(alpha = node_weight, size = 3, color = n_intersects)) +
+  geom_node_text(aes(label = label), repel = T, size = 3) +
+  scale_alpha(range = c(0.2, 0.9)) +
+  theme_graph() +
+  theme(legend.position="none") +
+  labs(subtitle = "Figure 6")
+```
+
+# dimension analysis --> taylor swift 
+
+```{r}
+# Convert to a data frame
+ts_prsd <- data.frame(ts_an, stringsAsFactors = F)
+
+# Aggregate the tags from dependency structures and parts-of-speech
+ts_bib <- biber_udpipe(ts_prsd)
+
+
+ts_bib$doc_id <- gsub("^taylorswift.*", "Taylor Swift", ts_bib$doc_id)
+ts_bib$doc_id <- gsub("^speaknow.*", "Speak Now", ts_bib$doc_id)
+ts_bib$doc_id <- gsub("^fearless.*", "Fearless", ts_bib$doc_id)
+ts_bib$doc_id <- gsub("^red.*", "Red", ts_bib$doc_id)
+ts_bib$doc_id <- gsub("^nineteen.*", "1989", ts_bib$doc_id)
+ts_bib$doc_id <- gsub("^reputation.*", "Reputation", ts_bib$doc_id)
+ts_bib$doc_id <- gsub("^lover.*", "Lover", ts_bib$doc_id)
+ts_bib$doc_id <- gsub("^folklore.*", "Folklore", ts_bib$doc_id)
+ts_bib$doc_id <- gsub("^evermore.*", "Evermore", ts_bib$doc_id)
+ts_bib$doc_id <- gsub("^midnights.*", "Midnights", ts_bib$doc_id)
+
+#screeplot_mda(ts_bib)
+
+
+ts_bib <- data.frame(ts_bib)
+ts_bib$doc_id = as.factor(ts_bib$doc_id)
+
+ts_mda <- mda_loadings(ts_bib, n_factors = 3)
+
+mda.biber::heatmap_mda(ts_mda, n_factor = 1)
+
+```
+
+# dimension analysis --> beyonce
+
+```{r}
+# Convert to a data frame
+bey_prsd <- data.frame(bey_an, stringsAsFactors = F)
+
+# Aggregate the tags from dependency structures and parts-of-speech
+bey_bib <- biber_udpipe(bey_prsd)
+
+bey_bib$doc_id <- gsub("^dangrouslyinlove.*", "Dangerously In Love", bey_bib$doc_id)
+bey_bib$doc_id <- gsub("^bday.*", "B'Day", bey_bib$doc_id)
+bey_bib$doc_id <- gsub("^iamsashafierce.*", "I Am...Sasha Fierce", bey_bib$doc_id)
+bey_bib$doc_id <- gsub("^four.*", "4", bey_bib$doc_id)
+bey_bib$doc_id <- gsub("^beyonce.*", "Beyonce", bey_bib$doc_id)
+bey_bib$doc_id <- gsub("^lemonade.*", "Lemonade", bey_bib$doc_id)
+bey_bib$doc_id <- gsub("^renaissance.*", "Renaissance", bey_bib$doc_id)
+
+
+
+
+#screeplot_mda(bey_bib)
+
+
+bey_bib <- data.frame(bey_bib)
+bey_bib$doc_id = as.factor(bey_bib$doc_id)
+
+bey_mda <- mda_loadings(bey_bib, n_factors = 3)
+
+mda.biber::heatmap_mda(bey_mda, n_factor = 1)
+```
+# dimensional analysis --> both
+
+```{r}
+
+both_prsd = rbind(bey_an, ts_an)
+
+# Convert to a data frame
+both_prsd <- data.frame(both_prsd, stringsAsFactors = F)
+
+# Aggregate the tags from dependency structures and parts-of-speech
+both_bib <- biber_udpipe(both_prsd)
+
+both_bib$doc_id <- gsub("^dangrouslyinlove.*", "Beyonce", both_bib$doc_id)
+both_bib$doc_id <- gsub("^bday.*", "Beyonce", both_bib$doc_id)
+both_bib$doc_id <- gsub("^iamsashafierce.*", "Beyonce", both_bib$doc_id)
+both_bib$doc_id <- gsub("^four.*", "Beyonce", both_bib$doc_id)
+both_bib$doc_id <- gsub("^beyonce.*", "Beyonce", both_bib$doc_id)
+both_bib$doc_id <- gsub("^lemonade.*", "Beyonce", both_bib$doc_id)
+both_bib$doc_id <- gsub("^renaissance.*", "Beyonce", both_bib$doc_id)
+both_bib$doc_id <- gsub("^taylorswift.*", "Taylor Swift", both_bib$doc_id)
+both_bib$doc_id <- gsub("^speaknow.*", "Taylor Swift", both_bib$doc_id)
+both_bib$doc_id <- gsub("^fearless.*", "Taylor Swift", both_bib$doc_id)
+both_bib$doc_id <- gsub("^red.*", "Taylor Swift", both_bib$doc_id)
+both_bib$doc_id <- gsub("^nineteen.*", "Taylor Swift", both_bib$doc_id)
+both_bib$doc_id <- gsub("^reputation.*", "Taylor Swift", both_bib$doc_id)
+both_bib$doc_id <- gsub("^lover.*", "Taylor Swift", both_bib$doc_id)
+both_bib$doc_id <- gsub("^folklore.*", "Taylor Swift", both_bib$doc_id)
+both_bib$doc_id <- gsub("^evermore.*", "Taylor Swift", both_bib$doc_id)
+both_bib$doc_id <- gsub("^midnights.*", "Taylor Swift", both_bib$doc_id)
+
+#screeplot_mda(both_bib)
+
+
+both_bib <- data.frame(both_bib)
+both_bib$doc_id = as.factor(both_bib$doc_id)
+
+both_mda <- mda_loadings(both_bib, n_factors = 3)
+
+mda.biber::heatmap_mda(both_mda, n_factor = 1)
+```
+
+
+# sentiment analysis  
+```{r}
+# str_squish() is a useful function from readr for getting rid of extra spaces, carriage returns, etc.
+mb <- str_squish(ts_corpus)
+
+# chunk the novel into sentences
+mb_sentences <- get_sentences(mb)
+
+# calculate and return sentiment scores
+mb_sentiment <- get_sentiment(mb_sentences)
+
+mb_dct <- get_dct_transform(mb_sentiment, low_pass_size = 7, x_reverse_len = 100, scale_vals = FALSE, scale_range = TRUE)
+
+mb_dct <- data.frame(dct = mb_dct) %>%
+  rownames_to_column("time") %>%
+  mutate(time = as.numeric(time))
+
+# str_squish() is a useful function from readr for getting rid of extra spaces, carriage returns, etc.
+mb2 <- str_squish(bey_corpus)
+
+# chunk the novel into sentences
+mb2_sentences <- get_sentences(mb2)
+
+# calculate and return sentiment scores
+mb2_sentiment <- get_sentiment(mb2_sentences)
+
+mb2_dct <- get_dct_transform(mb2_sentiment, low_pass_size = 7, x_reverse_len = 100, scale_vals = FALSE, scale_range = TRUE)
+
+mb2_dct <- data.frame(dct = mb2_dct) %>%
+  rownames_to_column("time") %>%
+  mutate(time = as.numeric(time))
+```
+
+# emotional sentiment --> plot 
+```{r}
+plot(mb_dct, type ="l", xlab = "Narrative Time", ylab = "Emotional Valence", col = "red", main = "Emotional Valence over Time")
+lines(mb2_dct$time, mb2_dct$dct, col = "blue")
+legend(70, 0.85, legend = c("Taylor Swift's Corpus", "Beyonce's Corpus"), 
+       col = c("red", "blue"), lty = 1, cex = 0.75)
+
+```
