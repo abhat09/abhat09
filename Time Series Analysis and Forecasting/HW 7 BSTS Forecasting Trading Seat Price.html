@@ -1129,7 +1129,7 @@ garch_iom =  garchFit(~ garch(1, 1), data = resids_iom, trace = F)</code></pre>
 ## 
 ## Mean and Variance Equation:
 ##  data ~ garch(1, 1)
-## &lt;environment: 0x000001ed14034f28&gt;
+## &lt;environment: 0x0000026243b09530&gt;
 ##  [data = resids_cme]
 ## 
 ## Conditional Distribution:
@@ -1155,7 +1155,7 @@ garch_iom =  garchFit(~ garch(1, 1), data = resids_iom, trace = F)</code></pre>
 ##  134.3956    normalized:  0.9398295 
 ## 
 ## Description:
-##  Thu Mar  6 11:22:03 2025 by user: anush 
+##  Thu Mar  6 12:00:48 2025 by user: anush 
 ## 
 ## 
 ## Standardised Residuals Tests:
@@ -1185,7 +1185,7 @@ garch_iom =  garchFit(~ garch(1, 1), data = resids_iom, trace = F)</code></pre>
 ## 
 ## Mean and Variance Equation:
 ##  data ~ garch(1, 1)
-## &lt;environment: 0x000001ed14b682a8&gt;
+## &lt;environment: 0x00000262440900a0&gt;
 ##  [data = resids_imm]
 ## 
 ## Conditional Distribution:
@@ -1211,7 +1211,7 @@ garch_iom =  garchFit(~ garch(1, 1), data = resids_iom, trace = F)</code></pre>
 ##  142.9749    normalized:  0.9998248 
 ## 
 ## Description:
-##  Thu Mar  6 11:22:03 2025 by user: anush 
+##  Thu Mar  6 12:00:48 2025 by user: anush 
 ## 
 ## 
 ## Standardised Residuals Tests:
@@ -1241,7 +1241,7 @@ garch_iom =  garchFit(~ garch(1, 1), data = resids_iom, trace = F)</code></pre>
 ## 
 ## Mean and Variance Equation:
 ##  data ~ garch(1, 1)
-## &lt;environment: 0x000001ed138725b8&gt;
+## &lt;environment: 0x0000026242e8cba8&gt;
 ##  [data = resids_iom]
 ## 
 ## Conditional Distribution:
@@ -1265,7 +1265,7 @@ garch_iom =  garchFit(~ garch(1, 1), data = resids_iom, trace = F)</code></pre>
 ##  126.0642    normalized:  0.8815681 
 ## 
 ## Description:
-##  Thu Mar  6 11:22:03 2025 by user: anush 
+##  Thu Mar  6 12:00:48 2025 by user: anush 
 ## 
 ## 
 ## Standardised Residuals Tests:
@@ -1345,206 +1345,206 @@ head(sts)</code></pre>
 ## 5  3/31/51   42.90    8.725    2.57   21.450
 ## 6  6/30/51   41.90    9.070    2.57   21.885</code></pre>
 <pre class="r"><code># Get df for each fit time period 
-sts$Date &lt;- as.Date(sts$Date, format = &quot;%m/%d/%y&quot;)
+sts$Date = as.Date(sts$Date, format = &quot;%m/%d/%y&quot;)
 
 # Train dfs 
-train1 &lt;- na.omit(sts[sts$Date &lt;= as.Date(&quot;1979-06-30&quot;),])
-train2 &lt;- na.omit(sts[sts$Date &lt;= as.Date(&quot;2004-06-30&quot;),])
-train3 &lt;- na.omit(sts[sts$Date &lt;= as.Date(&quot;2022-12-31&quot;),])
+train1 = na.omit(sts[sts$Date &lt;= as.Date(&quot;1979-06-30&quot;),])
+train2 = na.omit(sts[sts$Date &lt;= as.Date(&quot;2004-06-30&quot;),])
+train3 = na.omit(sts[sts$Date &lt;= as.Date(&quot;2022-12-31&quot;),])
 
 # Test dfs --&gt; one period = 3 months 
-test1 &lt;- na.omit(sts[sts$Date &gt;= as.Date(&quot;1979-09-30&quot;) &amp; sts$Date &lt;= as.Date(&quot;1980-09-30&quot;),])
-test2 &lt;- na.omit(sts[sts$Date &gt;= as.Date(&quot;2004-09-30&quot;) &amp; sts$Date &lt;= as.Date(&quot;2005-09-30&quot;),])
+test1 = na.omit(sts[sts$Date &gt;= as.Date(&quot;1979-09-30&quot;) &amp; sts$Date &lt;= as.Date(&quot;1980-09-30&quot;),])
+test2 = na.omit(sts[sts$Date &gt;= as.Date(&quot;2004-09-30&quot;) &amp; sts$Date &lt;= as.Date(&quot;2005-09-30&quot;),])
 # 3/2023 last date in df so just look at one quarter for testing 
-test3 &lt;- na.omit(sts[sts$Date &gt;= as.Date(&quot;2023-03-31&quot;) &amp; sts$Date &lt;= as.Date(&quot;2024-06-30&quot;),])</code></pre>
+test3 = na.omit(sts[sts$Date &gt;= as.Date(&quot;2023-03-31&quot;) &amp; sts$Date &lt;= as.Date(&quot;2024-06-30&quot;),])</code></pre>
 <div id="dynamic-regression-with-lagged-predictors" class="section level2">
 <h2>Dynamic Regression With Lagged Predictors</h2>
 <pre class="r"><code># Fit BSTS model with dynamic regression
-fit_bsts_dynamic_regression &lt;- function(train_data, y_variable, x_variables) {
+fit_bsts_dynamic_regression = function(train_data, y_variable, x_variables) {
   
   # Lag predictors
   for (x in x_variables) {
-    train_data[[paste0(x, &quot;_lag_1&quot;)]] &lt;- c(NA, train_data[[x]][1:(nrow(train_data) - 1)]) # Lag 1
+    train_data[[paste0(x, &quot;_lag_1&quot;)]] = c(NA, train_data[[x]][1:(nrow(train_data) - 1)]) # Lag 1
   }
   
   # Remove NAs --&gt; model throws an error 
-  train_data &lt;- na.omit(train_data)
-  y &lt;- train_data[[y_variable]]
-  X &lt;- train_data[, c(x_variables, paste0(x_variables, &quot;_lag_1&quot;))]
+  train_data = na.omit(train_data)
+  y = train_data[[y_variable]]
+  X = train_data[, c(x_variables, paste0(x_variables, &quot;_lag_1&quot;))]
   
   # State specification
-  state_specification &lt;- AddLocalLinearTrend(list(), y) 
+  state_specification = AddLocalLinearTrend(list(), y) 
   
   # Fit model
-  model &lt;- bsts(y ~ ., state.specification = state_specification, data = cbind(X, y), niter = 1000)
+  model = bsts(y ~ ., state.specification = state_specification, data = cbind(X, y), niter = 1000)
   
   return(model)
 }</code></pre>
 <pre class="r"><code># Dynamic Regression for GC
-dr_GC_1 &lt;- fit_bsts_dynamic_regression(train1, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:03 2025
+dr_GC_1 = fit_bsts_dynamic_regression(train1, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:03 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:03 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:03 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>dr_GC_2 &lt;- fit_bsts_dynamic_regression(train2, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:04 2025
+<pre class="r"><code>dr_GC_2 = fit_bsts_dynamic_regression(train2, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:48 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:49 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:49 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:49 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:49 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:49 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:49 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:49 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:04 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:49 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>dr_GC_3 &lt;- fit_bsts_dynamic_regression(train3, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:05 2025
+<pre class="r"><code>dr_GC_3 = fit_bsts_dynamic_regression(train3, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:49 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:05 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:49 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:05 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:49 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:05 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:50 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:05 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:50 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:05 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:50 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:05 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:50 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:05 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:50 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:50 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:50 2025
 ##  =-=-=-=-=</code></pre>
 <pre class="r"><code># Dynamic Regression for CL
-dr_CL_1 &lt;- fit_bsts_dynamic_regression(train1, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:06 2025
+dr_CL_1 = fit_bsts_dynamic_regression(train1, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:50 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:50 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:50 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>dr_CL_2 &lt;- fit_bsts_dynamic_regression(train2, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:06 2025
+<pre class="r"><code>dr_CL_2 = fit_bsts_dynamic_regression(train2, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:06 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:07 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:07 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:07 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:07 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:51 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>dr_CL_3 &lt;- fit_bsts_dynamic_regression(train3, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:07 2025
+<pre class="r"><code>dr_CL_3 = fit_bsts_dynamic_regression(train3, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:52 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:07 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:52 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:07 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:52 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:07 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:52 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:07 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:52 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:07 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:52 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:08 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:52 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:08 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:52 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:08 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:52 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:08 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=</code></pre>
 <pre class="r"><code># Forecasts
 # Need to make a function to lag the variables in test as well
-create_lagged_predictors &lt;- function(test_data, x_variables) {
+create_lagged_predictors = function(test_data, x_variables) {
   for (x in x_variables) {
-    test_data[[paste0(x, &quot;_lag_1&quot;)]] &lt;- c(NA, test_data[[x]][1:(nrow(test_data) - 1)]) # Lag 1
+    test_data[[paste0(x, &quot;_lag_1&quot;)]] = c(NA, test_data[[x]][1:(nrow(test_data) - 1)]) # Lag 1
   }
   
-  test_data &lt;- na.omit(test_data)
+  test_data = na.omit(test_data)
   
   return(test_data)
 }</code></pre>
 <pre class="r"><code># Lag tests for GC
-test1_lagged &lt;- create_lagged_predictors(test1, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))
-test2_lagged &lt;- create_lagged_predictors(test2, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))
+test1_lagged = create_lagged_predictors(test1, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))
+test2_lagged = create_lagged_predictors(test2, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))
 # need to replicate test3 df row so we can do the lag
-test3_lagged &lt;- create_lagged_predictors(test3[rep(1,2),], c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
+test3_lagged = create_lagged_predictors(test3[rep(1,2),], c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
 <pre class="r"><code># Forecast GC
-pred_GC_1 &lt;- predict(dr_GC_1, newdata = test1_lagged)$mean
-pred_GC_2 &lt;- predict(dr_GC_2, newdata = test2_lagged)$mean
-pred_GC_3 &lt;- predict(dr_GC_3, newdata = test3_lagged)$mean</code></pre>
+pred_GC_1 = predict(dr_GC_1, newdata = test1_lagged)$mean
+pred_GC_2 = predict(dr_GC_2, newdata = test2_lagged)$mean
+pred_GC_3 = predict(dr_GC_3, newdata = test3_lagged)$mean</code></pre>
 <pre class="r"><code># Lag tests for CL 
-test1_lagged &lt;- create_lagged_predictors(test1, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))
-test2_lagged &lt;- create_lagged_predictors(test2, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))
-test3_lagged &lt;- create_lagged_predictors(test3[rep(1,2),], c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
+test1_lagged = create_lagged_predictors(test1, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))
+test2_lagged = create_lagged_predictors(test2, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))
+test3_lagged = create_lagged_predictors(test3[rep(1,2),], c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
 <pre class="r"><code># Forecast CL
-pred_CL_1 &lt;- predict(dr_CL_1, newdata = test1_lagged)$mean
-pred_CL_2 &lt;- predict(dr_CL_2, newdata = test2_lagged)$mean
-pred_CL_3 &lt;- predict(dr_CL_3, newdata = test3_lagged)$mean</code></pre>
-<pre class="r"><code>calculate_rmse &lt;- function(actual, predicted) {
+pred_CL_1 = predict(dr_CL_1, newdata = test1_lagged)$mean
+pred_CL_2 = predict(dr_CL_2, newdata = test2_lagged)$mean
+pred_CL_3 = predict(dr_CL_3, newdata = test3_lagged)$mean</code></pre>
+<pre class="r"><code>calculate_rmse = function(actual, predicted) {
   sqrt(mean((actual - predicted)^2))
 }</code></pre>
-<pre class="r"><code>rmse_GC_1 &lt;- calculate_rmse(test1$Mean_GC, pred_GC_1)
-rmse_GC_2 &lt;- calculate_rmse(test2$Mean_GC, pred_GC_2)
-rmse_GC_3 &lt;- calculate_rmse(test3$Mean_GC, pred_GC_3)</code></pre>
-<pre class="r"><code>rmse_CL_1 &lt;- calculate_rmse(test1$Mean_CL, pred_CL_1)
-rmse_CL_2 &lt;- calculate_rmse(test2$Mean_CL, pred_CL_2)
-rmse_CL_3 &lt;- calculate_rmse(test3$Mean_CL, pred_CL_3)</code></pre>
+<pre class="r"><code>rmse_GC_1 = calculate_rmse(test1$Mean_GC, pred_GC_1)
+rmse_GC_2 = calculate_rmse(test2$Mean_GC, pred_GC_2)
+rmse_GC_3 = calculate_rmse(test3$Mean_GC, pred_GC_3)</code></pre>
+<pre class="r"><code>rmse_CL_1 = calculate_rmse(test1$Mean_CL, pred_CL_1)
+rmse_CL_2 = calculate_rmse(test2$Mean_CL, pred_CL_2)
+rmse_CL_3 = calculate_rmse(test3$Mean_CL, pred_CL_3)</code></pre>
 <pre class="r"><code>cat(&quot;DR RMSE GC FIT 1:&quot;, rmse_GC_1, &quot;\n&quot;)</code></pre>
 <pre><code>## DR RMSE GC FIT 1: 263.1018</code></pre>
 <pre class="r"><code>cat(&quot;DR RMSE GC FIT 2:&quot;, rmse_GC_2, &quot;\n&quot;)</code></pre>
@@ -1561,167 +1561,167 @@ rmse_CL_3 &lt;- calculate_rmse(test3$Mean_CL, pred_CL_3)</code></pre>
 <div id="different-trend-component-for-each-model-gc-will-use-seasonal-and-cl-will-use-local-level" class="section level2">
 <h2>Different Trend Component for Each Model (GC will use Seasonal and
 CL will use Local Level)</h2>
-<pre class="r"><code>fit_bsts_with_trend &lt;- function(train_data, y_variable, x_variables, trend_type = &quot;seasonal&quot;) {
-  y &lt;- train_data[[y_variable]]
-  X &lt;- train_data[, x_variables]
+<pre class="r"><code>fit_bsts_with_trend = function(train_data, y_variable, x_variables, trend_type = &quot;seasonal&quot;) {
+  y = train_data[[y_variable]]
+  X = train_data[, x_variables]
   
   if (trend_type == &quot;seasonal&quot;) {
-    state_specification &lt;- AddSeasonal(list(), y, nseasons = 4)
+    state_specification = AddSeasonal(list(), y, nseasons = 4)
   } else if (trend_type == &quot;local_level&quot;) {
-    state_specification &lt;- AddLocalLevel(list(), y) 
+    state_specification = AddLocalLevel(list(), y) 
   }
   
-  model &lt;- bsts(y ~ ., state.specification = state_specification, data = cbind(X, y), niter = 1000)
+  model = bsts(y ~ ., state.specification = state_specification, data = cbind(X, y), niter = 1000)
   
   return(model)
 }</code></pre>
 <pre class="r"><code># Run models
-mod_GC_4 &lt;- fit_bsts_with_trend(train1, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;), 
+mod_GC_4 = fit_bsts_with_trend(train1, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;), 
                                 trend_type = &quot;seasonal&quot;)</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:08 2025
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:08 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:08 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:08 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:08 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:08 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:08 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:08 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>mod_GC_5 &lt;- fit_bsts_with_trend(train2, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;), 
+<pre class="r"><code>mod_GC_5 = fit_bsts_with_trend(train2, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;), 
                                 trend_type = &quot;seasonal&quot;)</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:09 2025
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:53 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:54 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:54 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:54 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:54 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:54 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:54 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>mod_GC_6 &lt;- fit_bsts_with_trend(train3, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;),
+<pre class="r"><code>mod_GC_6 = fit_bsts_with_trend(train3, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;),
                                 trend_type = &quot;seasonal&quot;)</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:09 2025
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:54 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:09 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:54 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:54 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:54 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:54 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>mod_CL_4 &lt;- fit_bsts_with_trend(train1, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;), 
+<pre class="r"><code>mod_CL_4 = fit_bsts_with_trend(train1, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;), 
                                 trend_type = &quot;local_level&quot;)</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:10 2025
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:10 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>mod_CL_5 &lt;- fit_bsts_with_trend(train2, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;), 
+<pre class="r"><code>mod_CL_5 = fit_bsts_with_trend(train2, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;), 
                                 trend_type = &quot;local_level&quot;)</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:11 2025
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:55 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:56 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:56 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:56 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:56 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:56 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:56 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:56 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:56 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>mod_CL_6 &lt;- fit_bsts_with_trend(train3, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;),
+<pre class="r"><code>mod_CL_6 = fit_bsts_with_trend(train3, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;),
                                 trend_type = &quot;local_level&quot;)</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:11 2025
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:56 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:11 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:56 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:12 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:56 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:12 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:57 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:12 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:57 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:12 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:57 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:12 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:57 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:12 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:57 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:12 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:57 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:12 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:57 2025
 ##  =-=-=-=-=</code></pre>
 <pre class="r"><code># Forecast GC
-pred_GC_4 &lt;- predict(mod_GC_4, newdata = test1)$mean
-pred_GC_5 &lt;- predict(mod_GC_5, newdata = test2)$mean
-pred_GC_6 &lt;- predict(mod_GC_6, newdata = test3)$mean</code></pre>
+pred_GC_4 = predict(mod_GC_4, newdata = test1)$mean
+pred_GC_5 = predict(mod_GC_5, newdata = test2)$mean
+pred_GC_6 = predict(mod_GC_6, newdata = test3)$mean</code></pre>
 <pre class="r"><code># Forecast CL
-pred_CL_4 &lt;- predict(mod_CL_4, newdata = test1)$mean
-pred_CL_5 &lt;- predict(mod_CL_5, newdata = test2)$mean
-pred_CL_6 &lt;- predict(mod_CL_6, newdata = test3)$mean</code></pre>
-<pre class="r"><code>rmse_GC_4 &lt;- calculate_rmse(test1$Mean_GC, pred_GC_4)
-rmse_GC_5 &lt;- calculate_rmse(test2$Mean_GC, pred_GC_5)
-rmse_GC_6 &lt;- calculate_rmse(test3$Mean_GC, pred_GC_6)</code></pre>
-<pre class="r"><code>rmse_CL_4 &lt;- calculate_rmse(test1$Mean_CL, pred_CL_4)
-rmse_CL_5 &lt;- calculate_rmse(test2$Mean_CL, pred_CL_5)
-rmse_CL_6 &lt;- calculate_rmse(test3$Mean_CL, pred_CL_6)</code></pre>
+pred_CL_4 = predict(mod_CL_4, newdata = test1)$mean
+pred_CL_5 = predict(mod_CL_5, newdata = test2)$mean
+pred_CL_6 = predict(mod_CL_6, newdata = test3)$mean</code></pre>
+<pre class="r"><code>rmse_GC_4 = calculate_rmse(test1$Mean_GC, pred_GC_4)
+rmse_GC_5 = calculate_rmse(test2$Mean_GC, pred_GC_5)
+rmse_GC_6 = calculate_rmse(test3$Mean_GC, pred_GC_6)</code></pre>
+<pre class="r"><code>rmse_CL_4 = calculate_rmse(test1$Mean_CL, pred_CL_4)
+rmse_CL_5 = calculate_rmse(test2$Mean_CL, pred_CL_5)
+rmse_CL_6 = calculate_rmse(test3$Mean_CL, pred_CL_6)</code></pre>
 <pre class="r"><code>cat(&quot;Local LeveL RMSE GC FIT 1:&quot;, rmse_GC_4, &quot;\n&quot;)</code></pre>
 <pre><code>## Local LeveL RMSE GC FIT 1: 135.4152</code></pre>
 <pre class="r"><code>cat(&quot;Local LeveL RMSE GC FIT 2:&quot;, rmse_GC_5, &quot;\n&quot;)</code></pre>
@@ -1738,156 +1738,156 @@ rmse_CL_6 &lt;- calculate_rmse(test3$Mean_CL, pred_CL_6)</code></pre>
 <div id="state-specification-of-your-choice-local-level" class="section level2">
 <h2>State Specification of Your Choice (Local Level)</h2>
 <pre class="r"><code># Fit BSTS model with local level
-fit_bsts_ll &lt;- function(train_data, y_variable, x_variables) {
-  y &lt;- train_data[[y_variable]]
-  X &lt;- train_data[, c(x_variables)]
+fit_bsts_ll = function(train_data, y_variable, x_variables) {
+  y = train_data[[y_variable]]
+  X = train_data[, c(x_variables)]
   
   state_specification = AddGeneralizedLocalLinearTrend(list(), y)
-  model &lt;- bsts(y ~ ., state.specification = state_specification, data = cbind(X, y), niter = 1000)
+  model = bsts(y ~ ., state.specification = state_specification, data = cbind(X, y), niter = 1000)
   
   return(model)
 }</code></pre>
 <pre class="r"><code># Run models
-mod_GC_7 &lt;- fit_bsts_ll(train1, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:13 2025
+mod_GC_7 = fit_bsts_ll(train1, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:57 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:57 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:57 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>mod_GC_8 &lt;- fit_bsts_ll(train2, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:13 2025
+<pre class="r"><code>mod_GC_8 = fit_bsts_ll(train2, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:13 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>mod_GC_9 &lt;- fit_bsts_ll(train3, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:13 2025
+<pre class="r"><code>mod_GC_9 = fit_bsts_ll(train3, &quot;Mean_GC&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_CL&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:14 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:58 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:14 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:14 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:14 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:14 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:14 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:14 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:14 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:14 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>mod_CL_7 &lt;- fit_bsts_ll(train1, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:15 2025
+<pre class="r"><code>mod_CL_7 = fit_bsts_ll(train1, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:00:59 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>mod_CL_8 &lt;- fit_bsts_ll(train2, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:15 2025
+<pre class="r"><code>mod_CL_8 = fit_bsts_ll(train2, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=</code></pre>
-<pre class="r"><code>mod_CL_9 &lt;- fit_bsts_ll(train3, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
-<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 11:22:15 2025
+<pre class="r"><code>mod_CL_9 = fit_bsts_ll(train3, &quot;Mean_CL&quot;, c(&quot;Mean_CPI&quot;, &quot;Mean_GC&quot;, &quot;Mean_SPX&quot;))</code></pre>
+<pre><code>## =-=-=-=-= Iteration 0 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 100 Thu Mar  6 11:22:15 2025
+## =-=-=-=-= Iteration 100 Thu Mar  6 12:01:00 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 200 Thu Mar  6 11:22:16 2025
+## =-=-=-=-= Iteration 200 Thu Mar  6 12:01:01 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 300 Thu Mar  6 11:22:16 2025
+## =-=-=-=-= Iteration 300 Thu Mar  6 12:01:01 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 400 Thu Mar  6 11:22:16 2025
+## =-=-=-=-= Iteration 400 Thu Mar  6 12:01:01 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Thu Mar  6 11:22:16 2025
+## =-=-=-=-= Iteration 500 Thu Mar  6 12:01:01 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 600 Thu Mar  6 11:22:16 2025
+## =-=-=-=-= Iteration 600 Thu Mar  6 12:01:01 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 700 Thu Mar  6 11:22:16 2025
+## =-=-=-=-= Iteration 700 Thu Mar  6 12:01:01 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 800 Thu Mar  6 11:22:16 2025
+## =-=-=-=-= Iteration 800 Thu Mar  6 12:01:01 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 900 Thu Mar  6 11:22:16 2025
+## =-=-=-=-= Iteration 900 Thu Mar  6 12:01:01 2025
 ##  =-=-=-=-=</code></pre>
 <pre class="r"><code># Forecast GC
-pred_GC_7 &lt;- predict(mod_GC_7, newdata = test1)$mean
-pred_GC_8 &lt;- predict(mod_GC_8, newdata = test2)$mean
-pred_GC_9 &lt;- predict(mod_GC_9, newdata = test3)$mean</code></pre>
+pred_GC_7 = predict(mod_GC_7, newdata = test1)$mean
+pred_GC_8 = predict(mod_GC_8, newdata = test2)$mean
+pred_GC_9 = predict(mod_GC_9, newdata = test3)$mean</code></pre>
 <pre class="r"><code># Forecast CL
-pred_CL_7 &lt;- predict(mod_CL_7, newdata = test1)$mean
-pred_CL_8 &lt;- predict(mod_CL_8, newdata = test2)$mean
-pred_CL_9 &lt;- predict(mod_CL_9, newdata = test3)$mean</code></pre>
-<pre class="r"><code>rmse_GC_7 &lt;- calculate_rmse(test1$Mean_GC, pred_GC_7)
-rmse_GC_8 &lt;- calculate_rmse(test2$Mean_GC, pred_GC_8)
-rmse_GC_9 &lt;- calculate_rmse(test3$Mean_GC, pred_GC_9)</code></pre>
-<pre class="r"><code>rmse_CL_7 &lt;- calculate_rmse(test1$Mean_CL, pred_CL_7)
-rmse_CL_8 &lt;- calculate_rmse(test2$Mean_CL, pred_CL_8)
-rmse_CL_9 &lt;- calculate_rmse(test3$Mean_CL, pred_CL_9)</code></pre>
+pred_CL_7 = predict(mod_CL_7, newdata = test1)$mean
+pred_CL_8 = predict(mod_CL_8, newdata = test2)$mean
+pred_CL_9 = predict(mod_CL_9, newdata = test3)$mean</code></pre>
+<pre class="r"><code>rmse_GC_7 = calculate_rmse(test1$Mean_GC, pred_GC_7)
+rmse_GC_8 = calculate_rmse(test2$Mean_GC, pred_GC_8)
+rmse_GC_9 = calculate_rmse(test3$Mean_GC, pred_GC_9)</code></pre>
+<pre class="r"><code>rmse_CL_7 = calculate_rmse(test1$Mean_CL, pred_CL_7)
+rmse_CL_8 = calculate_rmse(test2$Mean_CL, pred_CL_8)
+rmse_CL_9 = calculate_rmse(test3$Mean_CL, pred_CL_9)</code></pre>
 <pre class="r"><code>cat(&quot;Local LeveL RMSE GC FIT 1:&quot;, rmse_GC_7, &quot;\n&quot;)</code></pre>
 <pre><code>## Local LeveL RMSE GC FIT 1: 234.1016</code></pre>
 <pre class="r"><code>cat(&quot;Local LeveL RMSE GC FIT 2:&quot;, rmse_GC_8, &quot;\n&quot;)</code></pre>
@@ -1905,33 +1905,33 @@ rmse_CL_9 &lt;- calculate_rmse(test3$Mean_CL, pred_CL_9)</code></pre>
 <div id="task-b-q1" class="section level1">
 <h1>Task B Q1:</h1>
 <pre class="r"><code># Create a table for RMSEs using a loop
-create_rmse_table &lt;- function(rmse_values, type) {
-  rmse_matrix &lt;- matrix(NA, nrow = 3, ncol = 3)
+create_rmse_table = function(rmse_values, type) {
+  rmse_matrix = matrix(NA, nrow = 3, ncol = 3)
   
   if (type == &quot;GC&quot;){
-    rownames(rmse_matrix) &lt;- c(&quot;Dynamic Regression&quot;, &quot;Seasonal&quot;, 
+    rownames(rmse_matrix) = c(&quot;Dynamic Regression&quot;, &quot;Seasonal&quot;, 
                              &quot;Generalized Local Linear&quot;)
   } else {
-    rownames(rmse_matrix) &lt;- c(&quot;Dynamic Regression&quot;, &quot;Local Linear&quot;, 
+    rownames(rmse_matrix) = c(&quot;Dynamic Regression&quot;, &quot;Local Linear&quot;, 
                              &quot;Generalized Local Linear&quot;)
   }
-  colnames(rmse_matrix) &lt;- c(&quot;Fit 1&quot;, &quot;Fit 2&quot;, &quot;Fit 3&quot;)
+  colnames(rmse_matrix) = c(&quot;Fit 1&quot;, &quot;Fit 2&quot;, &quot;Fit 3&quot;)
   for (i in 1:3) {  
     for (j in 1:3) {
-      rmse_matrix[i, j] &lt;- rmse_values[3*(i - 1) + j]
+      rmse_matrix[i, j] = rmse_values[3*(i - 1) + j]
     }
   }
 
   return(rmse_matrix)
 }</code></pre>
-<pre class="r"><code>gc_rmse_values &lt;- c(rmse_GC_1, rmse_GC_2, rmse_GC_3, rmse_GC_4, rmse_GC_5, 
+<pre class="r"><code>gc_rmse_values = c(rmse_GC_1, rmse_GC_2, rmse_GC_3, rmse_GC_4, rmse_GC_5, 
                     rmse_GC_6, rmse_GC_7, rmse_GC_8, rmse_GC_9)
-cl_rmse_values &lt;- c(rmse_CL_1, rmse_CL_2, rmse_CL_3, rmse_CL_4, rmse_CL_5,
+cl_rmse_values = c(rmse_CL_1, rmse_CL_2, rmse_CL_3, rmse_CL_4, rmse_CL_5,
                     rmse_CL_6, rmse_CL_7, rmse_CL_8, rmse_CL_9)
 
 
-rmse_GC_table &lt;- create_rmse_table(gc_rmse_values, &quot;GC&quot;)
-rmse_CL_table &lt;- create_rmse_table(cl_rmse_values, &quot;CL&quot;)</code></pre>
+rmse_GC_table = create_rmse_table(gc_rmse_values, &quot;GC&quot;)
+rmse_CL_table = create_rmse_table(cl_rmse_values, &quot;CL&quot;)</code></pre>
 <pre class="r"><code># Print the tables
 print(&quot;RMSE GC Table:&quot;)</code></pre>
 <pre><code>## [1] &quot;RMSE GC Table:&quot;</code></pre>
@@ -1968,23 +1968,23 @@ conclude that this model predicts the best for the three fits.</p>
 <h1>Task B Q2:</h1>
 <pre class="r"><code># Extract inclusion probabilities 
 # Get posterior dist. for coeff and calculate how many times it&#39;s nonzero
-extract_inclusion_probabilities &lt;- function(model, coeff) {
-  posterior &lt;- model$coefficients  
-  inclusion_probabilities &lt;- apply(posterior != 0, 2, mean)  
+extract_inclusion_probabilities = function(model, coeff) {
+  posterior = model$coefficients  
+  inclusion_probabilities = apply(posterior != 0, 2, mean)  
   return(inclusion_probabilities[coeff]) 
 }</code></pre>
 <pre class="r"><code># Plot probs for GC
-models_GC &lt;- list(dr_GC_1, dr_GC_2, dr_GC_3)
-coefficients &lt;- c(&quot;Mean_CPI_lag_1&quot;, &quot;Mean_CL_lag_1&quot;, &quot;Mean_SPX_lag_1&quot;)
-inclusion_probabilities_matrix &lt;- matrix(NA, nrow = length(coefficients), ncol = length(models_GC))
+models_GC = list(dr_GC_1, dr_GC_2, dr_GC_3)
+coefficients = c(&quot;Mean_CPI_lag_1&quot;, &quot;Mean_CL_lag_1&quot;, &quot;Mean_SPX_lag_1&quot;)
+inclusion_probabilities_matrix = matrix(NA, nrow = length(coefficients), ncol = length(models_GC))
 
 for (i in 1:length(coefficients)) {
   for (j in 1:length(models_GC)) {
-    inclusion_probabilities_matrix[i, j] &lt;- extract_inclusion_probabilities(models_GC[[j]], coefficients[i])
+    inclusion_probabilities_matrix[i, j] = extract_inclusion_probabilities(models_GC[[j]], coefficients[i])
   }
 }
 
-mean_inclusion_probs &lt;- apply(inclusion_probabilities_matrix, 1, mean)</code></pre>
+mean_inclusion_probs = apply(inclusion_probabilities_matrix, 1, mean)</code></pre>
 <pre class="r"><code>barplot(mean_inclusion_probs, 
         names.arg = c(&quot;Mean CPI Lag&quot;, &quot;Mean CL Lag&quot;, &quot;Mean SPX Lag&quot;), 
         col = &quot;light blue&quot;, 
@@ -1997,17 +1997,17 @@ mean_inclusion_probs &lt;- apply(inclusion_probabilities_matrix, 1, mean)</code>
         cex.lab = 1)  </code></pre>
 <p><img role="img" src="data:image/png;base64,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" width="672" /></p>
 <pre class="r"><code># Plot probs for CL
-models_CL &lt;- list(dr_CL_1, dr_CL_2, dr_CL_3)
-coefficients &lt;- c(&quot;Mean_CPI_lag_1&quot;, &quot;Mean_GC_lag_1&quot;, &quot;Mean_SPX_lag_1&quot;)
-inclusion_probabilities_matrix &lt;- matrix(NA, nrow = length(coefficients), ncol = length(models_CL))
+models_CL = list(dr_CL_1, dr_CL_2, dr_CL_3)
+coefficients = c(&quot;Mean_CPI_lag_1&quot;, &quot;Mean_GC_lag_1&quot;, &quot;Mean_SPX_lag_1&quot;)
+inclusion_probabilities_matrix = matrix(NA, nrow = length(coefficients), ncol = length(models_CL))
 
 for (i in 1:length(coefficients)) {
   for (j in 1:length(models_CL)) {
-    inclusion_probabilities_matrix[i, j] &lt;- extract_inclusion_probabilities(models_CL[[j]], coefficients[i])
+    inclusion_probabilities_matrix[i, j] = extract_inclusion_probabilities(models_CL[[j]], coefficients[i])
   }
 }
 
-mean_inclusion_probs &lt;- apply(inclusion_probabilities_matrix, 1, mean)</code></pre>
+mean_inclusion_probs = apply(inclusion_probabilities_matrix, 1, mean)</code></pre>
 <pre class="r"><code>barplot(mean_inclusion_probs, 
         names.arg = c(&quot;Mean CPI Lag&quot;, &quot;Mean GC Lag&quot;, &quot;Mean SPX Lag&quot;), 
         col = &quot;light blue&quot;, 
