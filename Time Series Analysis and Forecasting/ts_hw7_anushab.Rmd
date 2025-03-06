@@ -1,0 +1,984 @@
+---
+title: "Time Series HW 7"
+author: "Anusha Bhat"
+date: "2025-03-05"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+
+```{r}
+library(TSA)
+library(forecast)
+library(dplyr)
+library(lubridate)
+library(corrplot)
+library(fracdiff)
+library(fGarch)
+library(tseries)
+library(MASS)
+library(bsts)
+```
+
+
+```{r}
+# load data 
+classif = read.csv("Contracts_Classification.csv")
+vol = read.csv("Contracts_Volume.csv")
+```
+
+```{r}
+# need to join the two dfs on Commodity so rename column in classif df
+colnames(classif)[1] = "Commodity.Indicator"
+```
+
+# Task A
+
+Program that:
+- makes Floor Vol col (Total - Electronic)
+- sort out which rows are for CME, IMM, and IOM 
+- aggregate the data for each commodity indicator for each month
+- end table should look like: 
+Date Elec.Vol Tot.Vol Flo.Vol 
+
+```{r}
+# Join the two dfs first:
+df = left_join(vol, classif, by = "Commodity.Indicator")
+
+# note: should have more rows since some commodities can be sold by more than
+# one group
+```
+
+```{r}
+make_agg_tab = function(df){
+  # create final table 
+  df =  df %>%
+    # make Date col date type not chr
+    mutate(Date = as.Date(Date, format = "%m/%d/%Y")) %>%
+    # aggregate monthly data 
+  group_by(Date) %>%
+  summarize(
+    Total.Volume = sum(Total.Volume, na.rm = TRUE),
+    Electronic.Volume = sum(Electronic.Volume, na.rm = TRUE),
+    Floor.Volume = sum(Floor.Volume, na.rm = TRUE)
+  ) %>%
+    # sort by date 
+    arrange(Date)
+  
+  return(df)
+}
+
+```
+
+```{r}
+make_dfs = function(df)
+{
+  # Make Floor Vol Column 
+  # Need to format Elec Vol correctly first 
+  df$Electronic.Volume = as.numeric(gsub(",", "", df$Electronic.Volume))
+  df$Floor.Volume = df$Total.Volume - df$Electronic.Volume
+  
+  # Sort into the 3 commodity groups
+  cme_df = df # can trade everything 
+  imm_df = filter(df, Division == "IMM")
+  iom_df = filter(df, Division == "IOM")
+  
+  # Make aggregated tables 
+  cme_df = make_agg_tab(cme_df)
+  imm_df = make_agg_tab(imm_df)
+  iom_df = make_agg_tab(iom_df)
+  
+  return(list(cme = cme_df, imm = imm_df, iom = iom_df))
+}
+  
+```
+
+
+```{r}
+# Run program to get the 3 final tables 
+res_dfs = make_dfs(df)
+
+cme_df = res_dfs$cme
+imm_df = res_dfs$imm
+iom_df = res_dfs$imm
+
+# check outputs
+head(cme_df)
+head(imm_df)
+head(iom_df)
+```
+
+```{r}
+# Add the seats prices from previous time series information
+cme_seats = read.csv("cme_seats.csv")
+imm_seats = read.csv("imm_seats.csv")
+iom_seats = read.csv("iom_seats.csv")
+```
+
+```{r}
+# Make Date variable same for joining 
+cme_seats$Date = as.Date(cme_seats$Date, format = "%Y-%m-%d")
+imm_seats$Date = as.Date(imm_seats$Date, format = "%Y-%m-%d")
+iom_seats$Date = as.Date(iom_seats$Date, format = "%Y-%m-%d")
+
+# Left join for prices 
+cme_df = left_join(cme_df, cme_seats, by = "Date")
+imm_df = left_join(imm_df, imm_seats, by = "Date")
+iom_df = left_join(iom_df, iom_seats, by = "Date")
+# note: start date for prices is 2001-01-01s so will have NAs for 2000
+
+tail(cme_df)
+tail(imm_df)
+tail(iom_df)
+```
+
+```{r}
+# Make train and test splits --> 2013 in test set 
+cme_train = cme_df %>% filter(Date <= "2012-12-01") 
+cme_test = cme_df %>% filter(Date >= "2013-01-01")
+
+imm_train = imm_df %>% filter(Date <= "2012-12-01") 
+imm_test = iom_df %>% filter(Date >= "2013-01-01")
+
+iom_train = iom_df %>% filter(Date <= "2012-12-01") 
+iom_test = iom_df %>% filter(Date >= "2013-01-01")
+```
+
+
+## Linear Regression
+
+```{r}
+# correlation matrices
+
+corrplot(cor(na.omit(cme_df[, -c(1)])), method = "number")
+corrplot(cor(na.omit(imm_df[, -c(1)])), method = "number")
+corrplot(cor(na.omit(iom_df[, -c(1)])), method = "number")
+```
+
+For all 3 commodity indicators, electronic volume and total volume are highly correlated. To avoid multicolinearity, we will not use total volume as a predictor in our linear regression.
+
+```{r}
+# Fit lm
+cme_model =  lm(Price ~ Electronic.Volume + Floor.Volume, data = na.omit(cme_train))
+imm_model =  lm(Price ~ Electronic.Volume + Floor.Volume, data = na.omit(imm_train))
+iom_model =  lm(Price ~ Electronic.Volume + Floor.Volume, data = na.omit(iom_train))
+```
+
+```{r}
+print("CME Linear Regression")
+summary(cme_model)
+
+print("IMM Linear Regression")
+summary(imm_model)
+
+print("IOM Linear Regression")
+summary(iom_model)
+```
+
+
+```{r}
+# Make predictions on the test sets
+cme_pred =  predict(cme_model, newdata = cme_test)
+imm_pred =  predict(imm_model, newdata = imm_test)
+iom_pred =  predict(iom_model, newdata = iom_test)
+```
+
+```{r}
+# Get R^2 for models
+cme_r2 =  summary(lm(cme_test$Price ~ cme_pred))$r.squared
+imm_r2 =  summary(lm(imm_test$Price ~ imm_pred))$r.squared
+iom_r2 =  summary(lm(iom_test$Price ~ iom_pred))$r.squared
+```
+
+```{r}
+cat("cme_model R^2: ", cme_r2, "\n")
+cat("imm_model R^2: ", imm_r2, "\n")
+cat("iom_model R^2: ", iom_r2, "\n")
+```
+
+```{r}
+# Calculate RMSE 
+cme_rmse =  sqrt(mean((cme_test$Price - cme_pred)^2))
+imm_rmse =  sqrt(mean((imm_test$Price - imm_pred)^2))
+iom_rmse =  sqrt(mean((iom_test$Price - iom_pred)^2))
+```
+
+```{r}
+cat("cme_model RMSE: ", cme_rmse, "\n")
+cat("imm_model RMSE: ", imm_rmse, "\n")
+cat("iom_model RMSE: ", iom_rmse, "\n")
+```
+
+## Linear Regression with ARMA Errors
+
+```{r}
+acf(na.omit(cme_train$Price), main = "ACF For CME Prices")
+acf(na.omit(imm_train$Price), main = "ACF For IMM Prices")
+acf(na.omit(iom_train$Price), main = "ACF For IOM Prices")
+```
+
+The lags for all commodity types have high correlations, so we need to difference the data for the arima model. We can use an auto arima model for this.
+
+```{r}
+# Fit ARMA model with xreg on resids using vols as external predictors
+arma_cme =  auto.arima(cme_train$Price, 
+                    xreg = cbind(cme_train$Electronic.Volume, cme_train$Floor.Volume))
+arma_imm =  auto.arima(imm_train$Price, 
+                    xreg = cbind(imm_train$Electronic.Volume, imm_train$Floor.Volume))
+arma_iom =  auto.arima(iom_train$Price, 
+                    xreg = cbind(iom_train$Electronic.Volume, iom_train$Floor.Volume))
+```
+
+
+```{r}
+print("CME Model")
+summary(arma_cme)
+
+print("IMM Model")
+summary(arma_imm)
+
+print("IOM Model")
+summary(arma_iom)
+```
+
+```{r}
+# Forecast 
+for1_cme =  forecast(arma_cme, 
+                         xreg = cbind(cme_test$Electronic.Volume, cme_test$Floor.Volume),
+                         h = 12)$mean
+for1_imm =  forecast(arma_imm, 
+                         xreg = cbind(imm_test$Electronic.Volume, imm_test$Floor.Volume),
+                         h = 12)$mean
+for1_iom =  forecast(arma_iom, 
+                         xreg = cbind(iom_test$Electronic.Volume, iom_test$Floor.Volume),
+                         h = 12)$mean
+```
+
+
+```{r}
+# Calculate RMSE
+cme_rmse =  sqrt(mean((cme_test$Price - for1_cme)^2))
+imm_rmse =  sqrt(mean((imm_test$Price - for1_imm)^2))
+iom_rmse =  sqrt(mean((iom_test$Price - for1_iom)^2))
+```
+
+
+```{r}
+cat("cme_model RMSE: ", cme_rmse, "\n")
+cat("imm_model RMSE: ", imm_rmse, "\n")
+cat("iom_model RMSE: ", iom_rmse, "\n")
+```
+
+
+## Holt Winters
+
+```{r}
+# Make ts for the hw model
+cme_ts =  ts(na.omit(cme_train$Price), frequency = 12, start = c(2001, 1))
+imm_ts =  ts(na.omit(imm_train$Price), frequency = 12, start = c(2001, 1))
+iom_ts =  ts(na.omit(iom_train$Price), frequency = 12, start = c(2001, 1))
+
+# Fit HW model
+hw_cme =  HoltWinters(cme_ts, seasonal = "multiplicative")
+hw_imm =  HoltWinters(imm_ts, seasonal = "multiplicative")
+hw_iom =  HoltWinters(iom_ts, seasonal = "multiplicative")
+```
+
+```{r}
+print("CME Model")
+print(hw_cme)
+
+print("IMM Model")
+print(hw_imm)
+
+print("IOM Model")
+print(hw_iom)
+```
+
+```{r}
+# Forecast 
+hw_for_cme =  forecast(hw_cme, h = 12)$mean
+hw_for_imm =  forecast(hw_imm, h = 12)$mean
+hw_for_iom =  forecast(hw_iom, h = 12)$mean
+```
+
+```{r}
+cme_rmse =  sqrt(mean((cme_test$Price - hw_for_cme)^2))
+imm_rmse =  sqrt(mean((imm_test$Price - hw_for_imm)^2))
+iom_rmse =  sqrt(mean((iom_test$Price - hw_for_iom)^2))
+```
+
+```{r}
+cat("cme_model RMSE: ", cme_rmse, "\n")
+cat("imm_model RMSE: ", imm_rmse, "\n")
+cat("iom_model RMSE: ", iom_rmse, "\n")
+```
+
+## ARIMA
+
+```{r}
+# Fit ARMA model 
+arma_cme =  auto.arima(cme_train$Price)
+arma_imm =  auto.arima(imm_train$Price)
+arma_iom =  auto.arima(iom_train$Price)
+```
+
+
+```{r}
+print("CME Model")
+summary(arma_cme)
+
+print("IMM Model")
+summary(arma_imm)
+
+print("IOM Model")
+summary(arma_iom)
+```
+
+```{r}
+# Forecast 
+for2_cme =  forecast(arma_cme, h = 12)$mean
+for2_imm =  forecast(arma_imm, h = 12)$mean
+for2_iom =  forecast(arma_iom, h = 12)$mean
+```
+
+
+```{r}
+# Calculate RMSE
+cme_rmse =  sqrt(mean((cme_test$Price - for2_cme)^2))
+imm_rmse =  sqrt(mean((imm_test$Price - for2_imm)^2))
+iom_rmse =  sqrt(mean((iom_test$Price - for2_iom)^2))
+```
+
+
+```{r}
+cat("cme_model RMSE: ", cme_rmse, "\n")
+cat("imm_model RMSE: ", imm_rmse, "\n")
+cat("iom_model RMSE: ", iom_rmse, "\n")
+```
+
+## Seasonal ARIMA
+
+```{r}
+# Show seasonal decomposition
+cme_ets = ets(cme_ts)
+print("CME Decomposition")
+plot(cme_ets)
+
+imm_ets = ets(imm_ts)
+print("IMM Decomposition")
+plot(imm_ets)
+
+iom_ets = ets(iom_ts)
+print("IOM Decomposition")
+plot(iom_ets)
+```
+For all three commodity groups, the seasonal decompistion graphs do not show a repetitive trend so there may not be a huge seasonal component that the season arima model can capture.
+
+```{r}
+# Fit ARMA model 
+arma_cme =  auto.arima(cme_train$Price, seasonal = TRUE)
+arma_imm =  auto.arima(imm_train$Price, seasonal = TRUE)
+arma_iom =  auto.arima(iom_train$Price, seasonal = TRUE)
+```
+
+
+```{r}
+print("CME Model")
+summary(arma_cme)
+
+print("IMM Model")
+summary(arma_imm)
+
+print("IOM Model")
+summary(arma_iom)
+```
+
+```{r}
+# Forecast 
+seas_for_cme =  forecast(arma_cme, h = 12)$mean
+seas_for_imm =  forecast(arma_imm, h = 12)$mean
+seas_for_iom =  forecast(arma_iom, h = 12)$mean
+```
+
+
+```{r}
+# Calculate RMSE
+cme_rmse =  sqrt(mean((cme_test$Price - seas_for_cme)^2))
+imm_rmse =  sqrt(mean((imm_test$Price - seas_for_imm)^2))
+iom_rmse =  sqrt(mean((iom_test$Price - seas_for_iom)^2))
+```
+
+
+```{r}
+cat("cme_model RMSE: ", cme_rmse, "\n")
+cat("imm_model RMSE: ", imm_rmse, "\n")
+cat("iom_model RMSE: ", iom_rmse, "\n")
+```
+
+## ARFIMA
+
+The ACF plots showed slow decay in the autocorrelations for all three commodities, so the ARFIMA model is valid to use in this scenario.
+
+
+```{r}
+cme_mod = fracdiff(cme_ts)
+imm_mod = fracdiff(imm_ts)
+iom_mod = fracdiff(iom_ts)
+```
+
+```{r}
+print("CME Model")
+summary(cme_mod)
+
+print("IMM Model")
+summary(imm_mod)
+
+print("IOM Model")
+summary(iom_mod)
+```
+
+
+```{r}
+# Forecast 
+frac_for_cme =  forecast(cme_mod, h = 12)$mean
+frac_for_imm =  forecast(imm_mod, h = 12)$mean
+frac_for_iom =  forecast(iom_mod, h = 12)$mean
+```
+
+
+
+```{r}
+# Calculate RMSE
+cme_rmse =  sqrt(mean((cme_test$Price - frac_for_cme)^2))
+imm_rmse =  sqrt(mean((imm_test$Price - frac_for_imm)^2))
+iom_rmse =  sqrt(mean((iom_test$Price - frac_for_iom)^2))
+```
+
+
+```{r}
+cat("cme_model RMSE: ", cme_rmse, "\n")
+cat("imm_model RMSE: ", imm_rmse, "\n")
+cat("iom_model RMSE: ", iom_rmse, "\n")
+```
+
+## GARCH Model
+
+
+```{r}
+adf.test(cme_ts)
+adf.test(imm_ts)
+adf.test(iom_ts)
+```
+```{r}
+cme_log = log(cme_ts)
+imm_log = log(imm_ts)
+iom_log = log(iom_ts)
+```
+
+```{r}
+cme_log = diff(cme_log)
+imm_log = diff(imm_log)
+iom_log = diff(iom_log)
+```
+
+```{r}
+adf.test(cme_log)
+adf.test(imm_log)
+adf.test(iom_log)
+```
+
+Before differencing the time series for all three commodities were not stationary, after differencing and applying a log transformation they are stationary so we can proceed with the GARCH models as they require a stationary time series. Note, we take the log to prevent errors in the GARCH model.
+
+
+```{r}
+# Fit ARIMA models
+arma_cme =  auto.arima(cme_log)
+arma_imm =  auto.arima(imm_log)
+arma_iom =  auto.arima(iom_log)
+```
+
+```{r}
+# Use resids from ARIMAs to fit GARCHs
+resids_cme =  residuals(arma_cme)
+garch_cme =  garchFit(~ garch(1, 1), data = resids_cme, trace = F)
+```
+
+```{r}
+# For IMM model
+resids_imm =  residuals(arma_imm)
+garch_imm =  garchFit(~ garch(1, 1), data = resids_imm, trace = F)
+```
+
+```{r}
+# For IOM model
+resids_iom =  residuals(arma_iom)
+garch_iom =  garchFit(~ garch(1, 1), data = resids_iom, trace = F)
+```
+
+```{r}
+print("CME Model")
+summary(garch_cme)
+
+print("IMM Model")
+summary(garch_imm)
+
+print("IOM Model")
+summary(garch_iom)
+```
+
+
+```{r}
+# Forecast by taking arma price prediction + garch volaity prediction
+tmp_cme = forecast(arma_cme, h = 12)$mean
+g_for_cme =  predict(garch_cme, n.ahead = 12)$standardDeviation + tmp_cme
+g_for_cme = exp(g_for_cme)
+
+tmp_imm = forecast(arma_imm, h = 12)$mean
+g_for_imm =  predict(garch_imm, n.ahead = 12)$standardDeviation + tmp_imm
+g_for_imm = exp(g_for_imm)
+
+tmp_iom = forecast(arma_iom, h = 12)$mean
+g_for_iom =  predict(garch_iom, n.ahead = 12)$standardDeviation + tmp_iom
+g_for_iom = exp(g_for_iom)
+```
+
+```{r}
+# Calculate RMSE 
+rmse_cme =  sqrt(mean((cme_test$Price - g_for_cme)^2))
+rmse_imm =  sqrt(mean((imm_test$Price - g_for_imm)^2))
+rmse_iom =  sqrt(mean((iom_test$Price - g_for_iom)^2))
+```
+
+```{r}
+cat("CME Model RMSE: ", rmse_cme, "\n")
+cat("IMM Model RMSE: ", rmse_imm, "\n")
+cat("IOM Model RMSE: ", rmse_iom, "\n")
+```
+
+## Plot forecasts onto one plot for comparison
+
+```{r}
+cme_2013 =  cme_df[cme_df$Date >= "2013-01-01" & cme_df$Date <= "2013-12-31",]
+
+plot(cme_df$Date, cme_df$Price, type = "l", col = "black", lwd = 2, 
+     xlab = "Date", ylab = "Price", 
+     main = "CME Prices Over Time")
+
+lines(cme_2013$Date, cme_pred, col = "blue", lwd = 2)
+lines(cme_2013$Date, for1_cme, col = "green", lwd = 2)
+lines(cme_2013$Date, hw_for_cme, col = "red", lwd = 2)
+lines(cme_2013$Date, for2_cme, col = "purple", lwd = 2)
+lines(cme_2013$Date, seas_for_cme, col = "orange", lwd = 2)
+lines(cme_2013$Date, frac_for_cme, col = "brown", lwd = 2)
+lines(cme_2013$Date, g_for_cme, col = "pink", lwd = 2)
+
+legend("topleft", legend = c("Actual Prices", "Linear Regression", "ARIMA + Linear Regression", 
+                             "Holt-Winters", "ARIMA", "SARIMA", "ARFIMA", "ARCH + GARCH"),
+       col = c("black", "blue", "green", "red", "purple", "orange", "brown", "pink"), 
+       lty = 1, lwd = 2, cex = 0.8)
+```
+
+We note that the SARIMA and ARIMA models returned the same forecasts. All 7 models did not closely predict the 2013 prices, having high RMSEs. However, SARIMA, ARIMA, and Holt-Winters estimated the prices the most closely.
+
+
+# Task B
+
+```{r}
+sts = read.csv("sts_data_2023.csv")
+head(sts)
+```
+```{r}
+# Get df for each fit time period 
+sts$Date <- as.Date(sts$Date, format = "%m/%d/%y")
+
+# Train dfs 
+train1 <- na.omit(sts[sts$Date <= as.Date("1979-06-30"),])
+train2 <- na.omit(sts[sts$Date <= as.Date("2004-06-30"),])
+train3 <- na.omit(sts[sts$Date <= as.Date("2022-12-31"),])
+
+# Test dfs --> one period = 3 months 
+test1 <- na.omit(sts[sts$Date >= as.Date("1979-09-30") & sts$Date <= as.Date("1980-09-30"),])
+test2 <- na.omit(sts[sts$Date >= as.Date("2004-09-30") & sts$Date <= as.Date("2005-09-30"),])
+# 3/2023 last date in df so just look at one quarter for testing 
+test3 <- na.omit(sts[sts$Date >= as.Date("2023-03-31") & sts$Date <= as.Date("2024-06-30"),])
+```
+
+## Dynamic Regression With Lagged Predictors
+
+```{r}
+# Fit BSTS model with dynamic regression
+fit_bsts_dynamic_regression <- function(train_data, y_variable, x_variables) {
+  
+  # Lag predictors
+  for (x in x_variables) {
+    train_data[[paste0(x, "_lag_1")]] <- c(NA, train_data[[x]][1:(nrow(train_data) - 1)]) # Lag 1
+  }
+  
+  # Remove NAs --> model throws an error 
+  train_data <- na.omit(train_data)
+  y <- train_data[[y_variable]]
+  X <- train_data[, c(x_variables, paste0(x_variables, "_lag_1"))]
+  
+  # State specification
+  state_specification <- AddLocalLinearTrend(list(), y) 
+  
+  # Fit model
+  model <- bsts(y ~ ., state.specification = state_specification, data = cbind(X, y), niter = 1000)
+  
+  return(model)
+}
+```
+
+```{r}
+# Dynamic Regression for GC
+dr_GC_1 <- fit_bsts_dynamic_regression(train1, "Mean_GC", c("Mean_CPI", "Mean_CL", "Mean_SPX"))
+dr_GC_2 <- fit_bsts_dynamic_regression(train2, "Mean_GC", c("Mean_CPI", "Mean_CL", "Mean_SPX"))
+dr_GC_3 <- fit_bsts_dynamic_regression(train3, "Mean_GC", c("Mean_CPI", "Mean_CL", "Mean_SPX"))
+
+# Dynamic Regression for CL
+dr_CL_1 <- fit_bsts_dynamic_regression(train1, "Mean_CL", c("Mean_CPI", "Mean_GC", "Mean_SPX"))
+dr_CL_2 <- fit_bsts_dynamic_regression(train2, "Mean_CL", c("Mean_CPI", "Mean_GC", "Mean_SPX"))
+dr_CL_3 <- fit_bsts_dynamic_regression(train3, "Mean_CL", c("Mean_CPI", "Mean_GC", "Mean_SPX"))
+```
+```{r}
+# Forecasts
+# Need to make a function to lag the variables in test as well
+create_lagged_predictors <- function(test_data, x_variables) {
+  for (x in x_variables) {
+    test_data[[paste0(x, "_lag_1")]] <- c(NA, test_data[[x]][1:(nrow(test_data) - 1)]) # Lag 1
+  }
+  
+  test_data <- na.omit(test_data)
+  
+  return(test_data)
+}
+```
+
+```{r}
+# Lag tests for GC
+test1_lagged <- create_lagged_predictors(test1, c("Mean_CPI", "Mean_CL", "Mean_SPX"))
+test2_lagged <- create_lagged_predictors(test2, c("Mean_CPI", "Mean_CL", "Mean_SPX"))
+# need to replicate test3 df row so we can do the lag
+test3_lagged <- create_lagged_predictors(test3[rep(1,2),], c("Mean_CPI", "Mean_CL", "Mean_SPX"))
+```
+
+```{r}
+# Forecast GC
+pred_GC_1 <- predict(dr_GC_1, newdata = test1_lagged)$mean
+pred_GC_2 <- predict(dr_GC_2, newdata = test2_lagged)$mean
+pred_GC_3 <- predict(dr_GC_3, newdata = test3_lagged)$mean
+```
+
+
+```{r}
+# Lag tests for CL 
+test1_lagged <- create_lagged_predictors(test1, c("Mean_CPI", "Mean_GC", "Mean_SPX"))
+test2_lagged <- create_lagged_predictors(test2, c("Mean_CPI", "Mean_GC", "Mean_SPX"))
+test3_lagged <- create_lagged_predictors(test3[rep(1,2),], c("Mean_CPI", "Mean_GC", "Mean_SPX"))
+```
+
+```{r}
+# Forecast CL
+pred_CL_1 <- predict(dr_CL_1, newdata = test1_lagged)$mean
+pred_CL_2 <- predict(dr_CL_2, newdata = test2_lagged)$mean
+pred_CL_3 <- predict(dr_CL_3, newdata = test3_lagged)$mean
+```
+
+```{r}
+calculate_rmse <- function(actual, predicted) {
+  sqrt(mean((actual - predicted)^2))
+}
+```
+
+```{r}
+rmse_GC_1 <- calculate_rmse(test1$Mean_GC, pred_GC_1)
+rmse_GC_2 <- calculate_rmse(test2$Mean_GC, pred_GC_2)
+rmse_GC_3 <- calculate_rmse(test3$Mean_GC, pred_GC_3)
+```
+
+```{r}
+rmse_CL_1 <- calculate_rmse(test1$Mean_CL, pred_CL_1)
+rmse_CL_2 <- calculate_rmse(test2$Mean_CL, pred_CL_2)
+rmse_CL_3 <- calculate_rmse(test3$Mean_CL, pred_CL_3)
+```
+
+```{r}
+cat("DR RMSE GC FIT 1:", rmse_GC_1, "\n")
+cat("DR RMSE GC FIT 2:", rmse_GC_2, "\n")
+cat("DR RMSE GC FIT 3:", rmse_GC_3, "\n")
+```
+```{r}
+cat("DR RMSE CL FIT 1:", rmse_CL_1, "\n")
+cat("DR RMSE CL FIT 2:", rmse_CL_2, "\n")
+cat("DR RMSE CL FIT 3:", rmse_CL_3, "\n")
+```
+## Different Trend Component for Each Model (GC will use Seasonal and CL will use Local Level)
+
+```{r}
+fit_bsts_with_trend <- function(train_data, y_variable, x_variables, trend_type = "seasonal") {
+  y <- train_data[[y_variable]]
+  X <- train_data[, x_variables]
+  
+  if (trend_type == "seasonal") {
+    state_specification <- AddSeasonal(list(), y, nseasons = 4)
+  } else if (trend_type == "local_level") {
+    state_specification <- AddLocalLevel(list(), y) 
+  }
+  
+  model <- bsts(y ~ ., state.specification = state_specification, data = cbind(X, y), niter = 1000)
+  
+  return(model)
+}
+```
+
+
+```{r}
+# Run models
+mod_GC_4 <- fit_bsts_with_trend(train1, "Mean_GC", c("Mean_CPI", "Mean_CL", "Mean_SPX"), 
+                                trend_type = "seasonal")
+mod_GC_5 <- fit_bsts_with_trend(train2, "Mean_GC", c("Mean_CPI", "Mean_CL", "Mean_SPX"), 
+                                trend_type = "seasonal")
+mod_GC_6 <- fit_bsts_with_trend(train3, "Mean_GC", c("Mean_CPI", "Mean_CL", "Mean_SPX"),
+                                trend_type = "seasonal")
+
+mod_CL_4 <- fit_bsts_with_trend(train1, "Mean_CL", c("Mean_CPI", "Mean_GC", "Mean_SPX"), 
+                                trend_type = "local_level")
+mod_CL_5 <- fit_bsts_with_trend(train2, "Mean_CL", c("Mean_CPI", "Mean_GC", "Mean_SPX"), 
+                                trend_type = "local_level")
+mod_CL_6 <- fit_bsts_with_trend(train3, "Mean_CL", c("Mean_CPI", "Mean_GC", "Mean_SPX"),
+                                trend_type = "local_level")
+```
+```{r}
+# Forecast GC
+pred_GC_4 <- predict(mod_GC_4, newdata = test1)$mean
+pred_GC_5 <- predict(mod_GC_5, newdata = test2)$mean
+pred_GC_6 <- predict(mod_GC_6, newdata = test3)$mean
+```
+
+```{r}
+# Forecast CL
+pred_CL_4 <- predict(mod_CL_4, newdata = test1)$mean
+pred_CL_5 <- predict(mod_CL_5, newdata = test2)$mean
+pred_CL_6 <- predict(mod_CL_6, newdata = test3)$mean
+```
+
+```{r}
+rmse_GC_4 <- calculate_rmse(test1$Mean_GC, pred_GC_4)
+rmse_GC_5 <- calculate_rmse(test2$Mean_GC, pred_GC_5)
+rmse_GC_6 <- calculate_rmse(test3$Mean_GC, pred_GC_6)
+```
+
+```{r}
+rmse_CL_4 <- calculate_rmse(test1$Mean_CL, pred_CL_4)
+rmse_CL_5 <- calculate_rmse(test2$Mean_CL, pred_CL_5)
+rmse_CL_6 <- calculate_rmse(test3$Mean_CL, pred_CL_6)
+```
+
+```{r}
+cat("Local LeveL RMSE GC FIT 1:", rmse_GC_4, "\n")
+cat("Local LeveL RMSE GC FIT 2:", rmse_GC_5, "\n")
+cat("Local LeveL RMSE GC FIT 3:", rmse_GC_6, "\n")
+```
+
+```{r}
+cat("Local LeveL RMSE CL FIT 1:", rmse_CL_4, "\n")
+cat("Local LeveL RMSE CL FIT 2:", rmse_CL_5, "\n")
+cat("Local LeveL RMSE CL FIT 3:", rmse_CL_6, "\n")
+```
+
+
+
+## State Specification of Your Choice (Local Level)
+
+```{r}
+# Fit BSTS model with local level
+fit_bsts_ll <- function(train_data, y_variable, x_variables) {
+  y <- train_data[[y_variable]]
+  X <- train_data[, c(x_variables)]
+  
+  state_specification = AddGeneralizedLocalLinearTrend(list(), y)
+  model <- bsts(y ~ ., state.specification = state_specification, data = cbind(X, y), niter = 1000)
+  
+  return(model)
+}
+```
+
+```{r}
+# Run models
+mod_GC_7 <- fit_bsts_ll(train1, "Mean_GC", c("Mean_CPI", "Mean_CL", "Mean_SPX"))
+mod_GC_8 <- fit_bsts_ll(train2, "Mean_GC", c("Mean_CPI", "Mean_CL", "Mean_SPX"))
+mod_GC_9 <- fit_bsts_ll(train3, "Mean_GC", c("Mean_CPI", "Mean_CL", "Mean_SPX"))
+
+mod_CL_7 <- fit_bsts_ll(train1, "Mean_CL", c("Mean_CPI", "Mean_GC", "Mean_SPX"))
+mod_CL_8 <- fit_bsts_ll(train2, "Mean_CL", c("Mean_CPI", "Mean_GC", "Mean_SPX"))
+mod_CL_9 <- fit_bsts_ll(train3, "Mean_CL", c("Mean_CPI", "Mean_GC", "Mean_SPX"))
+```
+
+```{r}
+# Forecast GC
+pred_GC_7 <- predict(mod_GC_7, newdata = test1)$mean
+pred_GC_8 <- predict(mod_GC_8, newdata = test2)$mean
+pred_GC_9 <- predict(mod_GC_9, newdata = test3)$mean
+```
+
+
+```{r}
+# Forecast CL
+pred_CL_7 <- predict(mod_CL_7, newdata = test1)$mean
+pred_CL_8 <- predict(mod_CL_8, newdata = test2)$mean
+pred_CL_9 <- predict(mod_CL_9, newdata = test3)$mean
+```
+
+
+```{r}
+rmse_GC_7 <- calculate_rmse(test1$Mean_GC, pred_GC_7)
+rmse_GC_8 <- calculate_rmse(test2$Mean_GC, pred_GC_8)
+rmse_GC_9 <- calculate_rmse(test3$Mean_GC, pred_GC_9)
+```
+
+```{r}
+rmse_CL_7 <- calculate_rmse(test1$Mean_CL, pred_CL_7)
+rmse_CL_8 <- calculate_rmse(test2$Mean_CL, pred_CL_8)
+rmse_CL_9 <- calculate_rmse(test3$Mean_CL, pred_CL_9)
+```
+
+```{r}
+cat("Local LeveL RMSE GC FIT 1:", rmse_GC_7, "\n")
+cat("Local LeveL RMSE GC FIT 2:", rmse_GC_8, "\n")
+cat("Local LeveL RMSE GC FIT 3:", rmse_GC_9, "\n")
+```
+
+```{r}
+cat("Local LeveL RMSE CL FIT 1:", rmse_CL_7, "\n")
+cat("Local LeveL RMSE CL FIT 2:", rmse_CL_8, "\n")
+cat("Local LeveL RMSE CL FIT 3:", rmse_CL_9, "\n")
+```
+# Task B Q1:
+
+```{r}
+# Create a table for RMSEs using a loop
+create_rmse_table <- function(rmse_values, type) {
+  rmse_matrix <- matrix(NA, nrow = 3, ncol = 3)
+  
+  if (type == "GC"){
+    rownames(rmse_matrix) <- c("Dynamic Regression", "Seasonal", 
+                             "Generalized Local Linear")
+  } else {
+    rownames(rmse_matrix) <- c("Dynamic Regression", "Local Linear", 
+                             "Generalized Local Linear")
+  }
+  colnames(rmse_matrix) <- c("Fit 1", "Fit 2", "Fit 3")
+  for (i in 1:3) {  
+    for (j in 1:3) {
+      rmse_matrix[i, j] <- rmse_values[3*(i - 1) + j]
+    }
+  }
+
+  return(rmse_matrix)
+}
+```
+
+```{r}
+gc_rmse_values <- c(rmse_GC_1, rmse_GC_2, rmse_GC_3, rmse_GC_4, rmse_GC_5, 
+                    rmse_GC_6, rmse_GC_7, rmse_GC_8, rmse_GC_9)
+cl_rmse_values <- c(rmse_CL_1, rmse_CL_2, rmse_CL_3, rmse_CL_4, rmse_CL_5,
+                    rmse_CL_6, rmse_CL_7, rmse_CL_8, rmse_CL_9)
+
+
+rmse_GC_table <- create_rmse_table(gc_rmse_values, "GC")
+rmse_CL_table <- create_rmse_table(cl_rmse_values, "CL")
+```
+
+```{r}
+# Print the tables
+print("RMSE GC Table:")
+print(rmse_GC_table)
+
+print("RMSE CL Table:")
+print(rmse_CL_table)
+```
+*1. 1:* The state specification for the second model (seasonal trend for GC and local linear for CL) had the lowest RMSE for fit 1, therefore, it had the best predictions for this fit.
+
+*1. 2:* The state specification for Dynamic Regression had the lowest RMSE for fit 2, therefore, it had the best predictions for this fit.
+
+*1. 3:* The seasonal state specification had the lowest RMSE for fit 3 in the GC table, but the Generalized Local Linear state specification had the lowest RMSE for fit 3 in the CL table. 
+
+*1. 4:* The seasonal state specification is the best overall since it has the lowest RMSE for 2 fits in the GC table. Although it only has the lowest RMSE for fit 1 in the CL table, the RMSE for the seasonal model is not too far from the RMSE for the generalized local linear model for fit 3 in the CL table. Since it reached the lowest or close to the lowest RMSE more times than the other models, we can conclude that this model predicts the best for the three fits.  
+
+# Task B Q2: 
+
+
+```{r}
+# Extract inclusion probabilities 
+# Get posterior dist. for coeff and calculate how many times it's nonzero
+extract_inclusion_probabilities <- function(model, coeff) {
+  posterior <- model$coefficients  
+  inclusion_probabilities <- apply(posterior != 0, 2, mean)  
+  return(inclusion_probabilities[coeff]) 
+}
+```
+
+```{r}
+# Plot probs for GC
+models_GC <- list(dr_GC_1, dr_GC_2, dr_GC_3)
+coefficients <- c("Mean_CPI_lag_1", "Mean_CL_lag_1", "Mean_SPX_lag_1")
+inclusion_probabilities_matrix <- matrix(NA, nrow = length(coefficients), ncol = length(models_GC))
+
+for (i in 1:length(coefficients)) {
+  for (j in 1:length(models_GC)) {
+    inclusion_probabilities_matrix[i, j] <- extract_inclusion_probabilities(models_GC[[j]], coefficients[i])
+  }
+}
+
+mean_inclusion_probs <- apply(inclusion_probabilities_matrix, 1, mean)
+```
+
+```{r}
+barplot(mean_inclusion_probs, 
+        names.arg = c("Mean CPI Lag", "Mean CL Lag", "Mean SPX Lag"), 
+        col = "light blue", 
+        main = "Inclusion Probabilities for Lagged Variables (GC Models)",
+        ylab = "Inclusion Probability",
+        las = 1,  
+        cex.names = 0.8,  
+        cex.axis = 1,   
+        cex.main = 1,   
+        cex.lab = 1)  
+```
+
+```{r}
+# Plot probs for CL
+models_CL <- list(dr_CL_1, dr_CL_2, dr_CL_3)
+coefficients <- c("Mean_CPI_lag_1", "Mean_GC_lag_1", "Mean_SPX_lag_1")
+inclusion_probabilities_matrix <- matrix(NA, nrow = length(coefficients), ncol = length(models_CL))
+
+for (i in 1:length(coefficients)) {
+  for (j in 1:length(models_CL)) {
+    inclusion_probabilities_matrix[i, j] <- extract_inclusion_probabilities(models_CL[[j]], coefficients[i])
+  }
+}
+
+mean_inclusion_probs <- apply(inclusion_probabilities_matrix, 1, mean)
+```
+
+```{r}
+barplot(mean_inclusion_probs, 
+        names.arg = c("Mean CPI Lag", "Mean GC Lag", "Mean SPX Lag"), 
+        col = "light blue", 
+        main = "Inclusion Probabilities for Lagged Variables (CL Models)",
+        ylab = "Inclusion Probability",
+        las = 1,  
+        cex.names = 0.8,  
+        cex.axis = 1,   
+        cex.main = 1,   
+        cex.lab = 1)  
+```
+
+
+The inclusion probabilities for the lagged predictors in both models are relatively low (less than 0.5), however, the probabilities for the CL model are higher than the GC model. In the GC model, the SPX lag predictor has the highest inclusion probability of the three predictors, meanwhile, in the CL model, the CPI lag predictor has the highest inclusion probability. Since all lag predictors across both models have a probability of being included much less than half of the times, they are relatively not that useful in predicting GC or CL.
+
