@@ -1,5 +1,5 @@
-# Hi, I'm Anusha! 👋  
-Welcome to My Master's Program Projects Branch! 🎓  
+# Hi, I'm Anusha! 🌟  
+Welcome to My Repository! 👋
 
 🎓 **M.S. in Applied Data Science student** at the University of Chicago  
 🎓 **B.S. in Stats & Machine Learning**, minor in Biological Sciences, from Carnegie Mellon University (Class of 2024)  
@@ -8,7 +8,7 @@ This branch contains the projects I’ve worked on during my Bachelor's and Mast
 
 ---
 
-📚 **About Me:**  
+## 📚 **About Me:**  
 I’m currently diving deep into data science at UChicago, with a background in Statistics and Machine Learning. I have experience with biostatistics, statistical modeling, and machine learning through coursework, internships, and independent research. I’m proficient in **Python**, **R**, and **C**, with expertise in machine learning algorithms, data processing, and data visualization.
 
 I’m passionate about applying statistical modeling, machine learning, and cloud computing to solve complex problems. Currently, I’m looking for **Summer 2025 internship opportunities** to leverage my skills in real-world projects and continue learning in dynamic, impact-driven environments.
@@ -21,7 +21,7 @@ When I’m not coding, I enjoy long walks, watching rom-coms, crocheting, knitti
 
 ### 1. **Big Data & Cloud Computing - Analyzing Expedia Flight Itinerary Data**
 - Analyzed flight data and developed **regression**, **GBT**, and **SARIMA** models to predict flight fares.
-- Built a graph-based model to address customer queries through link prediction, shortest paths, PageRank and motif finding.
+- Built a graph-based model to address customer queries through link prediction, shortest paths, PageRank, and motif finding.
 
 ### 2. **Capstone Project: Optimizing Olympic Gymnastics Team Selection**
 - Used **linear mixed effects regression** and developed a **python simulation** of the Olympics Gymnastics event to predict performance and optimize athlete selection.
@@ -37,11 +37,9 @@ When I’m not coding, I enjoy long walks, watching rom-coms, crocheting, knitti
 - Applied **SMOTE** for balancing the dataset and **GridSearchCV** for hyperparameter tuning.
 - Provided actionable insights for improving retention and reducing attrition.
 
-
-
 ---
 
-🔍 **What I’m Looking For:**  
+## 🔍 **What I’m Looking For:**  
 Last summer I had the opportunity to work as a **Software Engineering Intern** at Material Bank where I was able to analyze 6 months of consumer data in R to gain insight into product preferences, delivery regions, & product specifications across different projects, informing targeted marketing strategies. 
 
 Now, I’m actively exploring **Summer 2025 internship** opportunities in **data science**, particularly in **statistical modeling**, **machine learning**, and **cloud-based solutions**. I’m excited to apply my skills to new industries and collaborate on impactful projects that drive innovation and strategic decision-making. 🚀
@@ -51,7 +49,7 @@ Now, I’m actively exploring **Summer 2025 internship** opportunities in **data
 ## 💻 **Tech Skills & Skills Utilized in Projects:**  
 - **Programming Languages:** Python, R, C, SQL  
 - **IDEs:** RStudio, VSCode  
-- **Machine Learning:** Text Analysis/NLP, Time Series Forecasting, Regression, Clustering, Algorithms, Supervised & Unsupervided Modeling, Feature Engineering  
+- **Machine Learning:** Text Analysis/NLP, Time Series Forecasting, Regression, Clustering, Algorithms, Supervised & Unsupervised Modeling, Feature Engineering  
 - **Libraries:** Pandas, NumPy, scikit-learn, PySpark  
 - **Data Visualization:** matplotlib, seaborn, ggplot2  
 - **Big Data/Cloud Computing Tools:** GCS, AWS, Hadoop  
