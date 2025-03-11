@@ -1,6 +1,10 @@
 # Hi, I'm Anusha! 🌟  
 Welcome to My Repository! 👋
 
+---
+
+## 📚 **Education:**  
+
 🎓 **M.S. in Applied Data Science student** at the University of Chicago  
 🎓 **B.S. in Stats & Machine Learning**, minor in Biological Sciences, from Carnegie Mellon University (Class of 2024)  
 
@@ -8,7 +12,7 @@ This branch contains the projects I’ve worked on during my Bachelor's and Mast
 
 ---
 
-## 📚 **About Me:**  
+## 🌸 **About Me:**   
 I’m currently diving deep into data science at UChicago, with a background in Statistics and Machine Learning. I have experience with biostatistics, statistical modeling, and machine learning through coursework, internships, and independent research. I’m proficient in **Python**, **R**, and **C**, with expertise in machine learning algorithms, data processing, and data visualization.
 
 I’m passionate about applying statistical modeling, machine learning, and cloud computing to solve complex problems. Currently, I’m looking for **Summer 2025 internship opportunities** to leverage my skills in real-world projects and continue learning in dynamic, impact-driven environments.
