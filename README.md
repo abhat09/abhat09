@@ -74,7 +74,6 @@ Feel free to check out my projects and reach out if you'd like to learn more or 
 - Applied **SMOTE** for balancing the dataset and **GridSearchCV** for hyperparameter tuning.
 - Provided actionable insights for improving retention and reducing attrition.
 
-
 ---
 
 I hope you find these projects interesting! Feel free to reach out if you have any questions or want to discuss any of these topics further. 🚀
