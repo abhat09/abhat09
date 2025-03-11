@@ -34,7 +34,7 @@ You can find my full resume in the **main** branch of this repository, detailing
 
 ---
 
-🌱 **Let’s Connect:**  
+## 🌱 **Let’s Connect:**  
 Feel free to check out my projects and reach out if you'd like to learn more or chat about data science!  
 [Connect with me on LinkedIn](https://www.linkedin.com/in/anushabhat09)
 
