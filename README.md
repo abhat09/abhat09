@@ -23,20 +23,20 @@ When I’m not coding, I enjoy long walks, watching rom-coms, crocheting, knitti
 
 ## 📊 **Highlighted Projects:**
 
-### 1. **Big Data & Cloud Computing - Analyzing Expedia Flight Itinerary Data**
+#### 1. **Big Data & Cloud Computing - Analyzing Expedia Flight Itinerary Data**
 - Analyzed flight data and developed **regression**, **GBT**, and **SARIMA** models to predict flight fares.
 - Built a graph-based model to address customer queries through link prediction, shortest paths, PageRank, and motif finding.
 
-### 2. **Capstone Project: Optimizing Olympic Gymnastics Team Selection**
+#### 2. **Capstone Project: Optimizing Olympic Gymnastics Team Selection**
 - Used **linear mixed effects regression** and developed a **python simulation** of the Olympics Gymnastics event to predict performance and optimize athlete selection.
 - Developed a model to guide decision-making for Team USA’s gymnastics selection.
 - Achieved accurate predictions for 4 out of 5 male team members & event medals for both the male & female gymnasts.
 
-### 3. **Data Science for Algorithmic Marketing - Personalized Product Recommendations for Household Segments**
+#### 3. **Data Science for Algorithmic Marketing - Personalized Product Recommendations for Household Segments**
 - Applied customer segmentation using **k-prototypes clustering** and performed **market basket analysis** and **collaborative filtering** on clusters for personalized recommendations.
 - Developed targeted marketing strategies to increase sales and customer satisfaction.
 
-### 4. **Machine Learning - Employee Attrition Prediction**
+#### 4. **Machine Learning - Employee Attrition Prediction**
 - Segmented employees using **K-Prototype clustering** and predicting employee attrition using **logistic regression**, **GBT**, and **RandomForest**.
 - Applied **SMOTE** for balancing the dataset and **GridSearchCV** for hyperparameter tuning.
 - Provided actionable insights for improving retention and reducing attrition.
