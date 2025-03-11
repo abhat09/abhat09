@@ -27,6 +27,30 @@ Last summer I had the opportunity to work as a **Software Engineering Intern** a
 
 Now, I’m actively exploring **Summer 2025 internship** opportunities in **data science**, particularly in **statistical modeling**, **machine learning**, and **cloud-based solutions**. I’m excited to apply my skills to new industries and collaborate on impactful projects that drive innovation and strategic decision-making. 🚀
 
+---
+
+## 📄 **My Resume**  
+You can find my full resume in the **main** branch of this repository, detailing all my academic and professional experiences. Feel free to explore the repository for more details!
+
+---
+
+🌱 **Let’s Connect:**  
+Feel free to check out my projects and reach out if you'd like to learn more or chat about data science!  
+[Connect with me on LinkedIn](https://www.linkedin.com/in/anushabhat09)
+
+
+---
+
+## 💻 **Tech Skills & Skills Utilized in Projects:**  
+- **Programming Languages:** Python, R, C, SQL  
+- **IDEs:** RStudio, VSCode  
+- **Machine Learning:** Text Analysis/NLP, Time Series Forecasting, Regression, Clustering, Algorithms, Supervised & Unsupervised Modeling, Feature Engineering  
+- **Libraries:** Pandas, NumPy, scikit-learn, PySpark  
+- **Data Visualization:** matplotlib, seaborn, ggplot2  
+- **Big Data/Cloud Computing Tools:** GCS, AWS, Hadoop  
+- **Consulting & Business Analytics:** Presenting to Non-technical Audiences, Collaboration, Data-driven Decision Making  
+- **Marketing Methods:** Predictive Analytics, Churn Prediction, Customer Segmentation, Market Basket Analysis, Market Share Analysis, Price Elasticity Analysis, Conjoint Analysis  
+- **Product Design:** Knowledge of **UI/UX principles** for building intuitive interfaces
 
 ---
 
@@ -50,29 +74,6 @@ Now, I’m actively exploring **Summer 2025 internship** opportunities in **data
 - Applied **SMOTE** for balancing the dataset and **GridSearchCV** for hyperparameter tuning.
 - Provided actionable insights for improving retention and reducing attrition.
 
----
-
-## 💻 **Tech Skills & Skills Utilized in Projects:**  
-- **Programming Languages:** Python, R, C, SQL  
-- **IDEs:** RStudio, VSCode  
-- **Machine Learning:** Text Analysis/NLP, Time Series Forecasting, Regression, Clustering, Algorithms, Supervised & Unsupervised Modeling, Feature Engineering  
-- **Libraries:** Pandas, NumPy, scikit-learn, PySpark  
-- **Data Visualization:** matplotlib, seaborn, ggplot2  
-- **Big Data/Cloud Computing Tools:** GCS, AWS, Hadoop  
-- **Consulting & Business Analytics:** Presenting to Non-technical Audiences, Collaboration, Data-driven Decision Making  
-- **Marketing Methods:** Predictive Analytics, Churn Prediction, Customer Segmentation, Market Basket Analysis, Market Share Analysis, Price Elasticity Analysis, Conjoint Analysis  
-- **Product Design:** Knowledge of **UI/UX principles** for building intuitive interfaces
-
----
-
-## 📄 **My Resume**  
-You can find my full resume in the **main** branch of this repository, detailing all my academic and professional experiences. Feel free to explore the repository for more details!
-
----
-
-🌱 **Let’s Connect:**  
-Feel free to check out my projects and reach out if you'd like to learn more or chat about data science!  
-[Connect with me on LinkedIn](https://www.linkedin.com/in/anushabhat09)
 
 ---
 
