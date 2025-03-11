@@ -11,17 +11,18 @@ These are projects from my undergraduate studies, showcasing the skills I've dev
 - **Methodology:** Used **linear mixed effects regression** to predict outcomes and optimize for medal count based on historical performance data.  
 - **Outcome:** A statistical model that guided the decision-making process for selecting athletes with the highest potential for winning medals.
 
-### 2. **AI Product Design Presentations (HCI Class)**  
-- **Objective:** Developed comprehensive presentations to pitch various AI products based on **Human-Computer Interaction (HCI)** principles.  
-- **Focus:** Emphasized how AI can be integrated into user-friendly products, ensuring optimal interaction and enhancing user experience.
 
-### 3. **Taylor Swift and Beyonce Lyrical Comparison (Text Analysis Course)**  
+### 2. **Taylor Swift and Beyonce Lyrical Comparison (Text Analysis Course)**  
 - **Objective:** Applied **NLP** techniques to analyze and derive insights from text data.  
 - **Projects:** Covered tasks like sentiment analysis, topic modeling, and text classification using various Python libraries.
 
-### 4. **Data Science Reports (Various Statistics Courses)**  
+### 3. **Data Science Reports (Various Statistics Courses)**  
 - **Objective:** Worked on several data science projects that involved **linear and nonlinear regression models**, **bootstrapping**, and **data collection, cleaning, and visualization**.  
 - **Outcome:** Created detailed reports showcasing data analysis, model performance, and actionable insights from real-world datasets.
+
+### 4. **AI Product Design Presentations (HCI Class)**  
+- **Objective:** Developed comprehensive presentations to pitch various AI products based on **Human-Computer Interaction (HCI)** principles.  
+- **Focus:** Emphasized how AI can be integrated into user-friendly products, ensuring optimal interaction and enhancing user experience.
 
 ### 5. **Paradise Diner Restaurant Game (Intro to Computer Science)**  
 - **Objective:** Developed a graphical visualization of a restaurant game using **Dijkstra's algorithm** based on the games Flo's Diner and Penguin's Diner.  
