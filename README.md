@@ -19,6 +19,15 @@ I’m passionate about applying statistical modeling, machine learning, and clou
 
 When I’m not coding, I enjoy long walks, watching rom-coms, crocheting, knitting, and painting. 🎨🍝
 
+
+---
+
+## 🔍 **What I’m Looking For:**  
+Last summer I had the opportunity to work as a **Software Engineering Intern** at Material Bank where I was able to analyze 6 months of consumer data in R to gain insight into product preferences, delivery regions, & product specifications across different projects, informing targeted marketing strategies. 
+
+Now, I’m actively exploring **Summer 2025 internship** opportunities in **data science**, particularly in **statistical modeling**, **machine learning**, and **cloud-based solutions**. I’m excited to apply my skills to new industries and collaborate on impactful projects that drive innovation and strategic decision-making. 🚀
+
+
 ---
 
 ## 📊 **Highlighted Projects:**
@@ -40,13 +49,6 @@ When I’m not coding, I enjoy long walks, watching rom-coms, crocheting, knitti
 - Segmented employees using **K-Prototype clustering** and predicting employee attrition using **logistic regression**, **GBT**, and **RandomForest**.
 - Applied **SMOTE** for balancing the dataset and **GridSearchCV** for hyperparameter tuning.
 - Provided actionable insights for improving retention and reducing attrition.
-
----
-
-## 🔍 **What I’m Looking For:**  
-Last summer I had the opportunity to work as a **Software Engineering Intern** at Material Bank where I was able to analyze 6 months of consumer data in R to gain insight into product preferences, delivery regions, & product specifications across different projects, informing targeted marketing strategies. 
-
-Now, I’m actively exploring **Summer 2025 internship** opportunities in **data science**, particularly in **statistical modeling**, **machine learning**, and **cloud-based solutions**. I’m excited to apply my skills to new industries and collaborate on impactful projects that drive innovation and strategic decision-making. 🚀
 
 ---
 
