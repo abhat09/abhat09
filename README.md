@@ -22,10 +22,10 @@ This branch contains the projects I have worked on so far during my Master's pro
 - **Outcome:** Provided actionable insights into employee retention, identifying at-risk segments and offering tailored strategies to improve employee satisfaction and reduce attrition rates.
 
 ### 4. **Time Series Analysis and Forecasting**  
-- ## **Objective:** Predicted London’s AQI for 2025 using multiple time series forecasting models.
-- ## **Methodology:**
+- **Objective:** Predicted London’s AQI for 2025 using multiple time series forecasting models.
+- **Methodology:**
 Developed **ARFIMA**, **SARIMA**, **ARIMA**, **Exponential Smoothing**, **BSTS**, and **LSTM** models. Compared models by evaluating **autocorrelations**, **residual vs. fit**, and **forecast plots** for model validity and RMSE for model accuracy.
-- ## **Outcome:**
+- **Outcome:**
 Achieved an **RMSE of 10.2** with the **LSTM model**, providing accurate predictions useful for environmental monitoring and AQI forecasting.
 
 
