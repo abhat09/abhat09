@@ -22,9 +22,12 @@ This branch contains the projects I have worked on so far during my Master's pro
 - **Outcome:** Provided actionable insights into employee retention, identifying at-risk segments and offering tailored strategies to improve employee satisfaction and reduce attrition rates.
 
 ### 4. **Time Series Analysis and Forecasting**  
-- **Objective:** Applied various **time series forecasting models** to predict future trends based on historical data.  
-- **Methodology:** Utilized **ARIMA**, **Exponential Smoothing**, **BSTS** (Bayesian Structural Time Series), and **LSTM** (Long Short-Term Memory networks) to develop robust forecasting models.  
-- **Outcome:** Developed accurate models that predicted trends, providing actionable insights for business strategy and decision-making.
+## **Objective:** Predicted London’s AQI for 2025 using multiple time series forecasting models.
+## **Methodology:**
+Developed **ARFIMA**, **SARIMA**, **ARIMA**, **Exponential Smoothing**, **BSTS**, and **LSTM** models. Compared models by evaluating **autocorrelations**, **residual vs. fit**, and **forecast plots** for model validity and RMSE for model accuracy.
+## **Outcome:**
+Achieved an **RMSE of 10.2** with the **LSTM model**, providing accurate predictions useful for environmental monitoring and AQI forecasting.
+
 
 ### 5. **Leadership & Consulting - Predictive Models for Revenue Optimization**  
 - **Objective:** Developed and pitched predictive models to improve revenues for various client companies in the context of a consulting company.  
