@@ -21,7 +21,7 @@ This branch contains the projects I have worked on so far during my Master's pro
 - **Methodology:** Applied **K-prototypes clustering** to segment employees, then developed **logistic regression**, **GBTM**, and **RandomForest** models on each cluster. All models utilized **SMOTE** to balance the dataset and **GridSearchCV** for hyperparameter tuning. These models were compared to **cluster-wise regression** to select the best model, considering the accuracy-recall tradeoff.
 - **Outcome:** Provided actionable insights into employee retention, identifying at-risk segments and offering tailored strategies to improve employee satisfaction and reduce attrition rates.
 
-### 4. **Time Series Analysis and Forecasting**  
+### 4. **Time Series Analysis and Forecasting - AQI Forecasting Report**  
 - **Objective:** Predicted London’s AQI for 2025 using multiple time series forecasting models.
 - **Methodology:**
 Developed **ARFIMA**, **SARIMA**, **ARIMA**, **Exponential Smoothing**, **BSTS**, and **LSTM** models. Compared models by evaluating **autocorrelations**, **residual vs. fit**, and **forecast plots** for model validity and RMSE for model accuracy.
