@@ -15,7 +15,7 @@ This repository contains the projects I’ve worked on during my Bachelor's and 
 ## 🌸 **About Me:**   
 I’m currently diving deeper into data science at UChicago, with a background in Statistics and Machine Learning. I have experience with biostatistics and predictive analytics through coursework, internships, and independent research. I’m proficient in **Python**, **R**, **SQL**, and **C**, with expertise in machine learning algorithms, data processing, and data visualization.
 
-I’m passionate about applying statistical modeling, machine learning, and cloud computing to solve complex problems. Currently, I’m looking for opportunities to leverage my skills in real-world projects and continue learning in a dynamic, impact-driven environment.
+I’m passionate about applying statistical modeling, machine learning, and cloud computing to solve complex business problems. Currently, I’m looking for opportunities to leverage my skills in real-world projects and continue learning in a dynamic, impact-driven environment.
 
 When I’m not coding, I enjoy long walks, rewatching old sit-coms, crocheting, knitting, and painting. 🎨🍝
 
