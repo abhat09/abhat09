@@ -17,7 +17,7 @@ I’m currently diving deeper into data science at UChicago, with a background i
 
 I’m passionate about applying statistical modeling, machine learning, and cloud computing to solve complex business problems. Currently, I’m looking for opportunities to leverage my skills in real-world projects and continue learning in a dynamic, impact-driven environment.
 
-When I’m not coding, I enjoy long walks, rewatching old sit-coms, crocheting, knitting, and painting. 🎨🍝
+When I’m not coding, I enjoy long walks, rewatching old sit-coms, reading, knitting, and painting. 🎨🍝
 
 
 ---
