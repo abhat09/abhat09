@@ -40,4 +40,4 @@ These are projects from my undergraduate studies, showcasing the skills I've dev
 
 ---
 
-I hope you enjoy exploring these projects! Feel free to reach out if you have any questions or want to discuss any of these topics in more detail.  
+I hope you enjoy exploring these projects! Feel free to reach out if you have any questions or want to discuss any of these topics in more detail. 🚀
