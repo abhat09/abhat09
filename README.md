@@ -11,7 +11,7 @@ This branch contains the projects I have worked on so far during my Master's pro
 - **Methodology:** Developed a **graph-based model** to map customer queries and used regression, machine learning, and time series models to predict flight fare trends.  
 - **Outcome:** Built a model capable of answering user-specific queries and determined the best model for price predictions to enhance the customer experience.
 
-### 2. **Data Science for Algorithmic Marketing - Personalized Product Reccomendations for Household Segments**  
+### 2. **Data Science for Algorithmic Marketing - Personalized Product Recommendations for Household Segments**  
 - **Objective:** Applied **predictive modeling techniques** to perform customer segmentation, market analysis, and product recommendations for a grocery store, improving sales and marketing strategies.  
 - **Methodology:** Utilized **customer segmentation** using **k-prototypes clustering**, performed **market basket analysis** to identify product associations and frequent itemsets, and implemented **collaborative filtering** for personalized product recommendations.  
 - **Outcome:** Developed tailored marketing strategies for product recommendations, personalized promotions, and cross-selling, ultimately increasing sales and improving customer satisfaction.
@@ -21,7 +21,7 @@ This branch contains the projects I have worked on so far during my Master's pro
 - **Methodology:** Applied **K-prototypes clustering** to segment employees, then developed **logistic regression**, **GBTM**, and **RandomForest** models on each cluster. All models utilized **SMOTE** to balance the dataset and **GridSearchCV** for hyperparameter tuning. These models were compared to **cluster-wise regression** to select the best model, considering the accuracy-recall tradeoff.
 - **Outcome:** Provided actionable insights into employee retention, identifying at-risk segments and offering tailored strategies to improve employee satisfaction and reduce attrition rates.
 
-### 4. **Time Series Analysis and Forecasting - AQI Forecasting Report**  
+### 4. **Time Series Analysis and Forecasting - Air Quality Index Forecasting Report**  
 - **Objective:** Predicted London’s AQI for 2025 using multiple time series forecasting models.
 - **Methodology:**
 Developed **ARFIMA**, **SARIMA**, **ARIMA**, **Exponential Smoothing**, **BSTS**, and **LSTM** models. Compared models by evaluating **autocorrelations**, **residual vs. fit**, and **forecast plots** for model validity and RMSE for model accuracy.
@@ -44,10 +44,9 @@ Achieved an **RMSE of 10.2** with the **LSTM model**, providing accurate predict
 ## 🔍 **Skills Utilized in These Projects:**  
 - **Programming Languages:** Python, R  
 - **IDES:** VSCode, RStudio  
-- **Data Science/Machine Learning:** Linear and Nonlinear Regression Models, NLP, Data Cleaning/Feature Engineering, Data Visualization, Time Series Analysis, Clustering and Segmentation, Classification, Collaborative Filtering  
-- **Marketing Methods:** Predictive Analytics, Churn Prediction, Customer Segmentation, Market Basket Analysis, Market Share Analysis, Price Elasticity Analysis, Conjoint Analysis  
-- **Big Data/Cloud Computing:** GCS, AWS, Hadoop  
-- **Consulting:** Presenting to Non-technical Audiences, Collaboration, Business Analytics  
+- **Data Science/Machine Learning:** Linear and Nonlinear Regression Models, Data Cleaning/Feature Engineering, Data Visualization, Time Series Analysis (LSTM, Arima/SARIMA/ARFIMA, BSTS, ETS), Clustering, Segmentation, Classification, Collaborative Filtering, Graph Models, Market Basket Analysis, Churn Prediction
+- **Big Data/Cloud Computing:** GCP, AWS, Hadoop  
+- **Consulting:** Presenting to Non-technical Audiences, Team Collaboration, Business Analytics, Marketing Algorithms   
 
 ---
 
