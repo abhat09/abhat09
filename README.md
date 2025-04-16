@@ -35,7 +35,7 @@ Feel free to check out my projects and reach out if you'd like to learn more or 
 
 ---
 
-## 💻 **Tech Skills & Skills Utilized in Projects:**  
+## 💻 **Tech Skills:**  
 - **Programming Languages:** Python, R, C, SQL  
 - **IDEs:** RStudio, VSCode  
 - **Machine Learning:** Text Analysis/NLP, Time Series Forecasting, Regression, Clustering, Algorithms, Supervised & Unsupervised Modeling, Feature Engineering  
