@@ -13,19 +13,13 @@ This repository contains the projects I’ve worked on during my Bachelor's and 
 ---
 
 ## 🌸 **About Me:**   
-I’m currently diving deeper into data science at UChicago, with a background in Statistics and Machine Learning. I have experience with biostatistics and predictive analytics through coursework, internships, and independent research. I’m proficient in **Python**, **R**, **SQL**, and **C**, with expertise in machine learning algorithms, data processing, and data visualization.
+I’m currently diving deep into data science at UChicago. My journey so far has taken me through biostatistics, predictive analytics, and independent research—sharpening my skills in **Python**, **R**, **SQL**, and **C**, with hands-on experience in machine learning, data wrangling, and visualization.
 
-I’m passionate about applying statistical modeling, machine learning, and cloud computing to solve complex business problems. Currently, I’m looking for opportunities to leverage my skills in real-world projects and continue learning in a dynamic, impact-driven environment.
+I’m especially passionate about using data to uncover product insights and solve complex business problems. Whether it’s statistical modeling, machine learning, or cloud-based tools, I love turning messy data into clear strategy.
 
-When I’m not coding, I enjoy long walks, rewatching old sit-coms, reading, knitting, and painting. 🎨🍝
+Right now, I’m looking for **opportunities to bring these skills into real-world projects**—ideally in fast-paced, impact-driven environments where learning never stops.
 
-
----
-
-## 🔍 **What I’m Looking For:**  
-Last summer I had the opportunity to work as a **Software Engineering Intern** at Material Bank where I was able to analyze 6 months of consumer data in R to gain insight into product preferences, delivery regions, & product specifications across different projects, informing targeted business and marketing strategies. 
-
-Now, I’m actively exploring **Summer 2025 internship** opportunities in **data science**, particularly in **statistical modeling**, **machine learning**, and **cloud-based solutions**. I’m excited to apply my skills to new industries and collaborate on impactful projects that drive innovation and strategic decision-making. 🚀
+When I’m not neck-deep in data, you’ll probably find me on a long walk, rewatching old sitcoms, knitting something cozy, or painting very poorly just for fun. 🎨📚🍝
 
 ---
 
