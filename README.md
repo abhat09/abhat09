@@ -17,8 +17,6 @@ I’m currently diving deep into data science at UChicago. My journey so far has
 
 I’m especially passionate about using data to uncover product insights and solve complex business problems. Whether it’s statistical modeling, machine learning, or cloud-based tools, I love turning messy data into clear strategy.
 
-Right now, I’m looking for **opportunities to bring these skills into real-world projects**—ideally in fast-paced, impact-driven environments where learning never stops.
-
 When I’m not neck-deep in data, you’ll probably find me on a long walk, rewatching old sitcoms, knitting something cozy, or painting very poorly just for fun. 🎨📚🍝
 
 ---
