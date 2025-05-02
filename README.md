@@ -36,7 +36,7 @@ Feel free to check out my projects and reach out if you'd like to learn more or 
 ## 💻 **Tech Skills:**  
 - **Programming Languages:** Python, R, C, SQL  
 - **IDEs:** RStudio, VSCode  
-- **Machine Learning:** Text Analysis/NLP, Time Series Forecasting, Regression, Clustering, Algorithms, Supervised & Unsupervised Modeling, Feature Engineering  
+- **Machine Learning:** Text Analysis/NLP, CV, Time Series Forecasting, Regression, Clustering, Algorithms, Supervised & Unsupervised Modeling, Feature Engineering  
 - **Libraries:** Pandas, NumPy, scikit-learn, PySpark, PyTorch, TensorFlow, Keras  
 - **Data Visualization:** matplotlib, seaborn, ggplot2  
 - **Big Data/Cloud Computing Tools:** GCP, AWS, Hadoop  
