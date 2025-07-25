@@ -12,7 +12,7 @@ These are projects from my undergraduate studies, showcasing the skills I've dev
 - **Outcome:** A statistical model that guided the decision-making process for selecting athletes with the highest potential for winning medals.
 
 
-### 2. [**Taylor Swift and Beyonce Lyrical Comparison (Text Analysis Course)**](https://github.com/abhat09/abhat09/tree/undergrad/15-112%20Fundamentals%20of%20Programming%20(Python))
+### 2. [**Taylor Swift and Beyonce Lyrical Comparison (Text Analysis Course)**](https://github.com/abhat09/abhat09/tree/undergrad/36-490%20Statistics%20Capstone)
 - **Objective:** Applied **NLP** techniques to analyze and derive insights from text data.  
 - **Projects:** Covered tasks like sentiment analysis, topic modeling, and text classification using various R libraries.
 
