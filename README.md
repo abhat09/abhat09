@@ -22,8 +22,10 @@ Outside of work, I enjoy long walks, watching classic sitcoms, knitting, and pai
 
 ---
 
-## 📄 (**My Resume & Projects**)[https://github.com/abhat09/abhat09/blob/main/anusha_bhat_resume.pdf]
-You can find my full resume in the **main** branch of my academic projects (repository)[https://github.com/abhat09/abhat09/tree/main], detailing my academic and professional experiences. Feel free to explore the repository for more details!
+## 📄 [My Resume & Projects](https://github.com/abhat09/abhat09/blob/main/anusha_bhat_resume.pdf)
+
+You can find my full resume in the **main** branch of my academic projects [repository](https://github.com/abhat09/abhat09/tree/main), detailing my academic and professional experiences.  
+Feel free to explore the repository for more details!
 
 ---
 
